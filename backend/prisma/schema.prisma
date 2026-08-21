@@ -23,15 +23,106 @@ model User {
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
   parentId    Int?
 
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Category → Category
+  parent   Category?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryParent")
+
+  // Category → Products
+  products Product[]
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  description String?
+  price       Int
+
+  // Product → Category
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  detailsJson String
+
+  publishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  parent      Category?  @relation("CategoryParent", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryParent")
+  // Product → Gallery (1-to-1)
+  galleryId Int     @unique
+  gallery   Gallery @relation(fields: [galleryId], references: [id])
+
+  // Product → SEO (1-to-1)
+  seoId Int @unique
+  seo   Seo @relation(fields: [seoId], references: [id])
+}
+
+model Gallery {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Gallery → Product
+  product Product?
+
+  // Gallery → GalleryImage
+  images GalleryImage[]
+
+  // Gallery → Media
+  media Media[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model GalleryImage {
+  id          Int     @id @default(autoincrement())
+  filename    String
+  description String?
+
+  galleryId Int
+  gallery   Gallery @relation(fields: [galleryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Media {
+  id          Int       @id @default(autoincrement())
+  filename    String
+  description String?
+  type        MediaType
+
+  // Gallery → Media
+  galleryId Int
+  gallery   Gallery @relation(fields: [galleryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MediaType {
+  VIDEO
+  PDF
+}
+
+model Seo {
+  id          Int     @id @default(autoincrement())
+  name        String
+  mediaId     Int?
+  description String?
+  tag         String?
+
+  // SEO → Product
+  product Product?
 }
