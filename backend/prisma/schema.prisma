@@ -51,7 +51,7 @@ model Product {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
 
-  detailsJson String
+  detailsJson Json?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -59,12 +59,12 @@ model Product {
   deletedAt   DateTime?
 
   // Product → Gallery (1-to-1)
-  galleryId Int     @unique
-  gallery   Gallery @relation(fields: [galleryId], references: [id])
+  galleryId Int?     @unique
+  gallery   Gallery? @relation(fields: [galleryId], references: [id])
 
   // Product → SEO (1-to-1)
-  seoId Int @unique
-  seo   Seo @relation(fields: [seoId], references: [id])
+  seoId Int? @unique
+  seo   Seo? @relation(fields: [seoId], references: [id])
 }
 
 model Gallery {
