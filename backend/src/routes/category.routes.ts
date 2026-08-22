@@ -20,7 +20,7 @@ router.post(
 );
 
 router.get("/", categoryController.getAllCategories);
-
+router.get("/count", protect, adminOnly, categoryController.countCategories);
 router.get("/:id", categoryController.getSingleCategory);
 
 router.put(

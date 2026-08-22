@@ -32,7 +32,10 @@ export const getAllCategories = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await categoryService.getAllCategories();
+    const search = String(req.query.search ?? "");
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 10);
+    const result = await categoryService.getAllCategories(search, page, limit);
     res.status(200).json({
       success: true,
       data: result,
@@ -95,6 +98,22 @@ export const deleteCategory = async (
     res.status(200).json({
       success: true,
       message: "Successfully deleted",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const countCategories = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await categoryService.countCategories();
+    res.status(200).json({
+      success: true,
       data: result,
     });
   } catch (error) {
