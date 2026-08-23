@@ -1,5 +1,5 @@
-import { Result } from "pg";
 import * as categoryService from "../services/category.service.js";
+
 import type { Request, Response, NextFunction } from "express";
 
 export const createCategory = async (
@@ -10,11 +10,14 @@ export const createCategory = async (
   try {
     const { name, description, parentId } = req.body;
 
-    const result = await categoryService.createCategory({
-      name,
-      description,
-      parentId,
-    });
+    const result = await categoryService.createCategory(
+      {
+        name,
+        description,
+        parentId,
+      },
+      req.file,
+    );
 
     return res.status(201).json({
       success: true,
@@ -35,8 +38,10 @@ export const getAllCategories = async (
     const search = String(req.query.search ?? "");
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 10);
+
     const result = await categoryService.getAllCategories(search, page, limit);
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       data: result,
     });
@@ -63,23 +68,29 @@ export const getSingleCategory = async (
     next(error);
   }
 };
+
 export const updateCategory = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { name, description, parentId } = req.body;
     const id = Number(req.params.id);
+    const { name, description, parentId } = req.body;
 
-    const result = await categoryService.updateCategory(id, {
-      name,
-      description,
-      parentId,
-    });
-    res.status(200).json({
+    const result = await categoryService.updateCategory(
+      id,
+      {
+        name,
+        description,
+        parentId,
+      },
+      req.file,
+    );
+
+    return res.status(200).json({
       success: true,
-      message: "Successfully Updated ",
+      message: "Category updated successfully",
       data: result,
     });
   } catch (error) {
@@ -94,10 +105,12 @@ export const deleteCategory = async (
 ) => {
   try {
     const id = Number(req.params.id);
+
     const result = await categoryService.deleteCategory(id);
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
-      message: "Successfully deleted",
+      message: "Category deleted successfully",
       data: result,
     });
   } catch (error) {
@@ -112,7 +125,8 @@ export const countCategories = async (
 ) => {
   try {
     const result = await categoryService.countCategories();
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       data: result,
     });

@@ -1,13 +1,17 @@
 import prisma from "../config/prisma.js";
 import createError from "http-errors";
 import redis from "../config/redis.js";
+import * as categoryImageService from "./categoryImage.service.js";
 
-export const createCategory = async (data: {
-  name: string;
-  description?: string;
-  parentId?: number;
-}) => {
-  // Check duplicate category name
+export const createCategory = async (
+  data: {
+    name: string;
+    description?: string;
+    parentId?: number;
+  },
+  file?: Express.Multer.File,
+) => {
+  // 1. Check duplicate category name
   const existingCategory = await prisma.category.findUnique({
     where: {
       name: data.name,
@@ -18,7 +22,7 @@ export const createCategory = async (data: {
     throw createError(400, "Category already exists");
   }
 
-  // Check parent category
+  // 2. Check parent category
   if (data.parentId !== undefined) {
     const parentCategory = await prisma.category.findFirst({
       where: {
@@ -32,16 +36,25 @@ export const createCategory = async (data: {
     }
   }
 
+  // 3. Create category
   const category = await prisma.category.create({
     data,
   });
-  await redis.del(`categories:count`);
-  // 6. Delete all category-list caches
+
+  // 4. Create category image
+  if (file) {
+    await categoryImageService.createCategoryImage(category.id, file);
+  }
+
+  // 5. Clear Redis cache
+  await redis.del("categories:count");
+
   const categoryListKeys = await redis.keys("categories:*");
 
   if (categoryListKeys.length > 0) {
     await redis.del(...categoryListKeys);
   }
+
   return category;
 };
 
@@ -61,7 +74,7 @@ export const getAllCategories = async (
     return JSON.parse(cachedCategories);
   }
 
-  // 2. If cache doesn't exist, query PostgreSQL
+  // 2. Get categories from PostgreSQL
   const categories = await prisma.category.findMany({
     where: {
       deletedAt: null,
@@ -69,6 +82,9 @@ export const getAllCategories = async (
         contains: search,
         mode: "insensitive",
       },
+    },
+    include: {
+      categoryImage: true,
     },
     orderBy: {
       createdAt: "asc",
@@ -81,6 +97,7 @@ export const getAllCategories = async (
     throw createError(404, "No categories found");
   }
 
+  // 3. Get total count
   const total = await prisma.category.count({
     where: {
       deletedAt: null,
@@ -99,44 +116,63 @@ export const getAllCategories = async (
     totalPages: Math.ceil(total / limit),
   };
 
-  // 3. Store result in Redis
+  // 4. Store in Redis
   await redis.set(cacheKey, JSON.stringify(result), "EX", 300);
 
-  // 4. Return result
   return result;
 };
 
 export const countCategories = async () => {
-  const cacheKey = `categories:count`;
+  const cacheKey = "categories:count";
+
+  // 1. Check Redis
   const cache = await redis.get(cacheKey);
+
   if (cache) {
     return Number(cache);
   }
+
+  // 2. Get count from PostgreSQL
   const totalCategories = await prisma.category.count({
     where: {
       deletedAt: null,
     },
   });
+
+  // 3. Store count in Redis
   await redis.set(cacheKey, totalCategories, "EX", 600);
+
   return totalCategories;
 };
+
 export const getSingleCategory = async (id: number) => {
   const cacheKey = `category:${id}`;
+
+  // 1. Check Redis
   const cacheCategory = await redis.get(cacheKey);
+
   if (cacheCategory) {
     return JSON.parse(cacheCategory);
   }
+
+  // 2. Get category from PostgreSQL
   const category = await prisma.category.findFirst({
     where: {
       id,
       deletedAt: null,
+    },
+    include: {
+      categoryImage: true,
     },
   });
 
   if (!category) {
     throw createError(404, "Category not found");
   }
+
+  // 3. Store in Redis
   await redis.set(cacheKey, JSON.stringify(category), "EX", 600);
+
   return category;
 };
 
@@ -147,6 +183,7 @@ export const updateCategory = async (
     description?: string;
     parentId?: number;
   },
+  file?: Express.Multer.File,
 ) => {
   // 1. Check category exists and is active
   const category = await prisma.category.findFirst({
@@ -192,7 +229,7 @@ export const updateCategory = async (
     }
   }
 
-  // 4. Update category in PostgreSQL
+  // 4. Update category
   const updatedCategory = await prisma.category.update({
     where: {
       id,
@@ -200,22 +237,29 @@ export const updateCategory = async (
     data,
   });
 
-  // 5. Delete individual category cache
+  // 5. Update category image if a new image was uploaded
+  if (file) {
+    await categoryImageService.updateCategoryImage(id, file);
+  }
+
+  // 6. Clear individual category cache
   await redis.del(`category:${id}`);
-  await redis.del(`categories:count`);
-  // 6. Delete all category-list caches
+
+  // 7. Clear count cache
+  await redis.del("categories:count");
+
+  // 8. Clear category list caches
   const categoryListKeys = await redis.keys("categories:*");
 
   if (categoryListKeys.length > 0) {
     await redis.del(...categoryListKeys);
   }
 
-  // 7. Return updated category
   return updatedCategory;
 };
 
 export const deleteCategory = async (id: number) => {
-  // Check category exists and is active
+  // 1. Check category exists and is active
   const category = await prisma.category.findFirst({
     where: {
       id,
@@ -227,7 +271,7 @@ export const deleteCategory = async (id: number) => {
     throw createError(404, "Category not found");
   }
 
-  // Soft delete
+  // 2. Soft delete category
   const deletedCategory = await prisma.category.update({
     where: {
       id,
@@ -236,13 +280,19 @@ export const deleteCategory = async (id: number) => {
       deletedAt: new Date(),
     },
   });
+
+  // 3. Clear individual category cache
   await redis.del(`category:${id}`);
-  await redis.del(`categories:count`);
-  // 6. Delete all category-list caches
+
+  // 4. Clear count cache
+  await redis.del("categories:count");
+
+  // 5. Clear category list caches
   const categoryListKeys = await redis.keys("categories:*");
 
   if (categoryListKeys.length > 0) {
     await redis.del(...categoryListKeys);
   }
+
   return deletedCategory;
 };
