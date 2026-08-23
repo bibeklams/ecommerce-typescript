@@ -46,7 +46,7 @@ export const createCategory = async (
     await categoryImageService.createCategoryImage(category.id, file);
   }
 
-  // 5. Clear Redis cache
+  // 5. Clear Redis caches
   await redis.del("categories:count");
 
   const categoryListKeys = await redis.keys("categories:*");
@@ -74,7 +74,7 @@ export const getAllCategories = async (
     return JSON.parse(cachedCategories);
   }
 
-  // 2. Get categories from PostgreSQL
+  // 2. Get categories
   const categories = await prisma.category.findMany({
     where: {
       deletedAt: null,
@@ -132,14 +132,14 @@ export const countCategories = async () => {
     return Number(cache);
   }
 
-  // 2. Get count from PostgreSQL
+  // 2. Get count
   const totalCategories = await prisma.category.count({
     where: {
       deletedAt: null,
     },
   });
 
-  // 3. Store count in Redis
+  // 3. Store in Redis
   await redis.set(cacheKey, totalCategories, "EX", 600);
 
   return totalCategories;
@@ -149,13 +149,13 @@ export const getSingleCategory = async (id: number) => {
   const cacheKey = `category:${id}`;
 
   // 1. Check Redis
-  const cacheCategory = await redis.get(cacheKey);
+  const cachedCategory = await redis.get(cacheKey);
 
-  if (cacheCategory) {
-    return JSON.parse(cacheCategory);
+  if (cachedCategory) {
+    return JSON.parse(cachedCategory);
   }
 
-  // 2. Get category from PostgreSQL
+  // 2. Get category
   const category = await prisma.category.findFirst({
     where: {
       id,
@@ -212,7 +212,6 @@ export const updateCategory = async (
 
   // 3. Check parent category
   if (data.parentId !== undefined) {
-    // Category cannot be its own parent
     if (data.parentId === id) {
       throw createError(400, "Category cannot be its own parent");
     }
@@ -237,12 +236,12 @@ export const updateCategory = async (
     data,
   });
 
-  // 5. Update category image if a new image was uploaded
+  // 5. Update category image
   if (file) {
     await categoryImageService.updateCategoryImage(id, file);
   }
 
-  // 6. Clear individual category cache
+  // 6. Clear category cache
   await redis.del(`category:${id}`);
 
   // 7. Clear count cache

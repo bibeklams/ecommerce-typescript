@@ -44,6 +44,16 @@ export const updateCategoryImage = async (
     throw createError(400, "Image is required");
   }
 
+  const existingImage = await prisma.categoryImage.findUnique({
+    where: {
+      categoryId,
+    },
+  });
+
+  if (!existingImage) {
+    throw createError(404, "Category image not found");
+  }
+
   const result = await uploadToCloudinary(file.buffer, "categories");
 
   const updatedCategoryImage = await prisma.categoryImage.update({
@@ -56,14 +66,36 @@ export const updateCategoryImage = async (
     },
   });
 
+  // Delete old image from Cloudinary
+  if (existingImage.publicId) {
+    await cloudinary.uploader.destroy(existingImage.publicId);
+  }
+
   return updatedCategoryImage;
 };
 
 export const deleteCategoryImage = async (categoryId: number) => {
+  const existingImage = await prisma.categoryImage.findUnique({
+    where: {
+      categoryId,
+    },
+  });
+
+  if (!existingImage) {
+    throw createError(404, "Category image not found");
+  }
+
+  // Delete image from Cloudinary
+  if (existingImage.publicId) {
+    await cloudinary.uploader.destroy(existingImage.publicId);
+  }
+
+  // Delete database record
   const deletedCategoryImage = await prisma.categoryImage.delete({
     where: {
       categoryId,
     },
   });
+
   return deletedCategoryImage;
 };

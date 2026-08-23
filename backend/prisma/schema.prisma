@@ -81,27 +81,20 @@ model Product {
 }
 
 model Gallery {
-  id   Int    @id @default(autoincrement())
-  name String
+  id        Int            @id @default(autoincrement())
 
-  // Gallery → Product
-  product Product?
+  product   Product?
+  images    GalleryImage[]
+  media     Media[]
 
-  // Gallery → GalleryImage
-  images GalleryImage[]
-
-  // Gallery → Media
-  media Media[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }
 
 model GalleryImage {
-  id          Int     @id @default(autoincrement())
-  filename    String
-  description String?
+  id        Int    @id @default(autoincrement())
+  url       String
+  publicId  String
 
   galleryId Int
   gallery   Gallery @relation(fields: [galleryId], references: [id])
@@ -111,12 +104,11 @@ model GalleryImage {
 }
 
 model Media {
-  id          Int       @id @default(autoincrement())
-  filename    String
-  description String?
-  type        MediaType
+  id        Int       @id @default(autoincrement())
+  url       String
+  publicId  String
+  type      MediaType
 
-  // Gallery → Media
   galleryId Int
   gallery   Gallery @relation(fields: [galleryId], references: [id])
 
