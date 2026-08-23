@@ -1,4 +1,5 @@
 import * as productService from "../services/product.service.js";
+
 import type { Request, Response, NextFunction } from "express";
 
 export const createProduct = async (
@@ -11,13 +12,25 @@ export const createProduct = async (
 
     const categoryId = Number(req.params.categoryId);
 
-    const result = await productService.createProduct({
-      name,
-      description,
-      price,
-      categoryId,
-      detailsJson,
-    });
+    const files = req.files as {
+      images?: Express.Multer.File[];
+      media?: Express.Multer.File[];
+    };
+
+    const imageFiles = files?.images ?? [];
+    const mediaFiles = files?.media ?? [];
+
+    const result = await productService.createProduct(
+      {
+        name,
+        description,
+        price: Number(price),
+        categoryId,
+        detailsJson,
+      },
+      imageFiles,
+      mediaFiles,
+    );
 
     return res.status(201).json({
       success: true,
@@ -41,7 +54,7 @@ export const getAllProducts = async (
 
     const result = await productService.getAllProducts(search, page, limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: result,
     });
@@ -57,8 +70,10 @@ export const getSingleProduct = async (
 ) => {
   try {
     const id = Number(req.params.id);
+
     const result = await productService.getSingleProduct(id);
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
       data: result,
     });
@@ -80,14 +95,14 @@ export const updateProduct = async (
     const result = await productService.updateProduct(id, {
       name,
       description,
-      price,
+      price: price !== undefined ? Number(price) : undefined,
       detailsJson,
-      categoryId,
+      categoryId: categoryId !== undefined ? Number(categoryId) : undefined,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Updated Successfully",
+      message: "Product updated successfully",
       data: result,
     });
   } catch (error) {
@@ -101,8 +116,9 @@ export const countProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await productService.countProduct();
-    res.status(200).json({
+    const result = await productService.countProducts();
+
+    return res.status(200).json({
       success: true,
       data: result,
     });
@@ -118,10 +134,12 @@ export const deleteProduct = async (
 ) => {
   try {
     const id = Number(req.params.id);
+
     const result = await productService.deleteProduct(id);
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
-      message: "Deleted Successfully",
+      message: "Product deleted successfully",
       data: result,
     });
   } catch (error) {
