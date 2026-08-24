@@ -102,12 +102,14 @@ export const getAllProducts = async (
   const products = await prisma.product.findMany({
     where: {
       deletedAt: null,
+
       name: {
         contains: search,
         mode: "insensitive",
       },
     },
     include: {
+      seo: true,
       category: true,
       gallery: {
         include: {
@@ -177,6 +179,7 @@ export const getSingleProduct = async (id: number) => {
       deletedAt: null,
     },
     include: {
+      seo: true,
       category: true,
       gallery: {
         include: {
