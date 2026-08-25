@@ -1,0 +1,32 @@
+import api from "./api";
+import type { User } from "../types/user";
+
+export const register = async (data: {
+  name: string;
+  email: string;
+  password: string;
+}) => {
+  const response = await api.post("/auth/register", data);
+  return response.data;
+};
+
+export const login = async (data: { email: string; password: string }) => {
+  const response = await api.post("/auth/login", data);
+  return response.data;
+};
+
+export const logout = async () => {
+  const response = await api.post("/auth/logout");
+  return response.data;
+};
+
+export const refreshToken = async () => {
+  const response = await api.post("/auth/refresh-token");
+  return response.data;
+};
+
+export const profile = async (): Promise<User> => {
+  const response = await api.get("/auth/profile");
+
+  return response.data.data;
+};

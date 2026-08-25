@@ -6,11 +6,8 @@ node_modules/
 .env.*
 !.env.example
 
-# TypeScript build output
+# Build output
 dist/
-
-# Prisma generated client
-src/generated/
 
 # Logs
 *.log
