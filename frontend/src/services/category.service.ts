@@ -1,5 +1,6 @@
 import api from "./api";
 import type { Category } from "../types/Category";
+
 export const createCategory = async (data: {
   name: string;
   description?: string;
@@ -33,7 +34,7 @@ export const getAllCategories = async (): Promise<Category[]> => {
 };
 
 export const getSingleCategory = async (id: number): Promise<Category> => {
-  const response = await api.get(`/categories:${id}`);
+  const response = await api.get(`/categories/${id}`);
   return response.data;
 };
 
@@ -71,5 +72,10 @@ export const updateCategory = async (
 
   const response = await api.put(`/categories/${id}`, formData);
 
+  return response.data;
+};
+
+export const deleteCategory = async (id: number) => {
+  const response = await api.delete(`/categories/${id}`);
   return response.data;
 };
