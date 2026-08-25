@@ -11,7 +11,7 @@ export const createCategory = async (data: {
 
   formData.append("name", data.name);
 
-  if (data.description) {
+  if (data.description !== undefined) {
     formData.append("description", data.description);
   }
 
@@ -19,7 +19,7 @@ export const createCategory = async (data: {
     formData.append("parentId", String(data.parentId));
   }
 
-  if (data.categoryImage) {
+  if (data.categoryImage !== undefined) {
     formData.append("categoryImage", data.categoryImage);
   }
 
@@ -30,16 +30,19 @@ export const createCategory = async (data: {
 
 export const getAllCategories = async (): Promise<Category[]> => {
   const response = await api.get("/categories");
+
   return response.data;
 };
 
 export const getSingleCategory = async (id: number): Promise<Category> => {
   const response = await api.get(`/categories/${id}`);
+
   return response.data;
 };
 
 export const countCategories = async () => {
   const response = await api.get("/categories/count");
+
   return response.data;
 };
 
@@ -77,5 +80,6 @@ export const updateCategory = async (
 
 export const deleteCategory = async (id: number) => {
   const response = await api.delete(`/categories/${id}`);
+
   return response.data;
 };

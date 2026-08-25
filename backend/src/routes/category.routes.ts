@@ -20,7 +20,7 @@ router.post(
   "/",
   protect,
   adminOnly,
-  upload.single("image"),
+  upload.single("categoryImage"),
   validation(createCategory),
   categoryController.createCategory,
 );
@@ -35,7 +35,7 @@ router.put(
   "/:id",
   protect,
   adminOnly,
-  upload.single("image"),
+  upload.single("categoryImage"),
   validation(updateCategory),
   categoryController.updateCategory,
 );
