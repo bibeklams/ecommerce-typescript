@@ -7,7 +7,6 @@ import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 
 import HomePage from "../pages/HomePage";
-import SearchPage from "../pages/SearchPage";
 
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
@@ -16,9 +15,8 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
 import AdminUser from "../pages/admin/AdminUser";
-import AdminSeo from "../pages/admin/AdminSeo";
 
-import NotFoundPage from "../pages/NotFoundPage";
+// import NotFoundPage from "../pages/NotFoundPage";
 
 const AppRoutes = () => {
   return (
@@ -31,7 +29,6 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/home" element={<HomePage />} />
-          <Route path="/search" element={<SearchPage />} />
         </Route>
       </Route>
 
@@ -42,12 +39,11 @@ const AppRoutes = () => {
           <Route path="products" element={<AdminProduct />} />
           <Route path="categories" element={<AdminCategory />} />
           <Route path="users" element={<AdminUser />} />
-          <Route path="seo" element={<AdminSeo />} />
         </Route>
       </Route>
 
       {/* 404 */}
-      <Route path="*" element={<NotFoundPage />} />
+      {/* <Route path="*" element={<NotFoundPage />} /> */}
     </Routes>
   );
 };

@@ -26,39 +26,57 @@ const AdminProduct = () => {
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Get products
+  // =========================
+  // GET PRODUCTS
+  // =========================
+
   useEffect(() => {
     dispatch(getAllProductsThunk());
   }, [dispatch]);
 
-  // Add product
+  // =========================
+  // ADD PRODUCT
+  // =========================
+
   const handleAdd = () => {
     setEditingProduct(null);
     setShowForm(true);
   };
 
-  // Edit product
+  // =========================
+  // EDIT PRODUCT
+  // =========================
+
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setShowForm(true);
   };
 
-  // Cancel
+  // =========================
+  // CANCEL
+  // =========================
+
   const handleCancel = () => {
     setShowForm(false);
     setEditingProduct(null);
   };
 
-  // Create / Update
+  // =========================
+  // CREATE / UPDATE PRODUCT
+  // =========================
+
   const handleSubmit = async (data: {
     name: string;
     slug: string;
     description?: string;
     price: number;
     categoryId: number;
-    published: boolean;
+    detailsJson?: object;
   }) => {
+    // =========================
     // UPDATE
+    // =========================
+
     if (editingProduct) {
       const result = await dispatch(
         updateProductThunk({
@@ -79,7 +97,10 @@ const AdminProduct = () => {
       return;
     }
 
+    // =========================
     // CREATE
+    // =========================
+
     const result = await dispatch(createProductThunk(data));
 
     if (createProductThunk.fulfilled.match(result)) {
@@ -91,7 +112,10 @@ const AdminProduct = () => {
     }
   };
 
-  // Delete
+  // =========================
+  // DELETE PRODUCT
+  // =========================
+
   const handleDelete = async (id: number) => {
     const result = await dispatch(deleteProductThunk(id));
 
@@ -102,18 +126,24 @@ const AdminProduct = () => {
     }
   };
 
+  // =========================
+  // UI
+  // =========================
+
   return (
     <main>
       <h1>Products</h1>
 
-      {/* Add Product */}
+      {/* Add Product Button */}
+
       {!showForm && (
         <button type="button" onClick={handleAdd}>
           Add Product
         </button>
       )}
 
-      {/* Form */}
+      {/* Product Form */}
+
       {showForm && (
         <ProductForm
           categories={categories}
@@ -124,10 +154,12 @@ const AdminProduct = () => {
         />
       )}
 
-      {/* Redux error */}
+      {/* Redux Error */}
+
       {error && <p>{error}</p>}
 
-      {/* Table */}
+      {/* Product Table */}
+
       <ProductTable
         products={products}
         categories={categories}

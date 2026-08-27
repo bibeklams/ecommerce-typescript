@@ -11,10 +11,18 @@ import {
   countProducts,
 } from "../../services/product.service";
 
+type GetProductsParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
+};
 interface ProductState {
   products: Product[];
   product: Product | null;
   count: number;
+  page: number;
+  limit: number;
+
   loading: boolean;
   error: string | null;
 }
@@ -23,6 +31,8 @@ const initialState: ProductState = {
   products: [],
   product: null,
   count: 0,
+  page: 1,
+  limit: 20,
   loading: false,
   error: null,
 };
@@ -30,21 +40,21 @@ const initialState: ProductState = {
 type CreateProductData = {
   name: string;
   slug: string;
+  description?: string;
   price: number;
-  description: string;
   categoryId: number;
-  detailsJson: string;
-  images: File[];
-  media: File[];
+  detailsJson?: object;
+  images?: File[];
+  media?: File[];
 };
 
 type UpdateProductData = {
   name?: string;
   slug?: string;
-  price?: number;
   description?: string;
+  price?: number;
   categoryId?: number;
-  detailsJson?: string;
+  detailsJson?: object;
   images?: File[];
   media?: File[];
 };
@@ -59,13 +69,19 @@ export const createProductThunk = createAsyncThunk<Product, CreateProductData>(
 );
 
 // GET ALL
-export const getAllProductsThunk = createAsyncThunk<Product[]>(
-  "product/getAllProducts",
-  async () => {
-    const response = await getAllProducts();
-    return response;
+export const getAllProductsThunk = createAsyncThunk<
+  {
+    products: Product[];
+    total: number;
+    page: number;
+    limit: number;
   },
-);
+  GetProductsParams
+>("product/getAllProducts", async ({ search = "", page = 1, limit = 10 }) => {
+  const response = await getAllProducts(search, page, limit);
+
+  return response;
+});
 
 // GET SINGLE
 export const getSingleProductThunk = createAsyncThunk<Product, number>(
@@ -140,7 +156,12 @@ const productSlice = createSlice({
 
     builder.addCase(getAllProductsThunk.fulfilled, (state, action) => {
       state.loading = false;
-      state.products = action.payload;
+
+      state.products = action.payload.products;
+      state.page = action.payload.page;
+      state.limit = action.payload.limit;
+
+      state.error = null;
     });
 
     builder.addCase(getAllProductsThunk.rejected, (state, action) => {

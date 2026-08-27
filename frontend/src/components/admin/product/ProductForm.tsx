@@ -10,19 +10,23 @@ type ProductFormData = {
   description: string;
   price: string;
   categoryId: string;
+  detailsJson: string;
 };
 
 interface ProductFormProps {
   categories: Category[];
   editingProduct: Product | null;
   loading: boolean;
+
   onSubmit: (data: {
     name: string;
     slug: string;
     description?: string;
     price: number;
     categoryId: number;
+    detailsJson?: object;
   }) => void;
+
   onCancel: () => void;
 }
 
@@ -42,6 +46,21 @@ const productSchema = Yup.object({
     .required("Price is required"),
 
   categoryId: Yup.string().required("Category is required"),
+
+  detailsJson: Yup.string().test(
+    "valid-json",
+    "Details must be valid JSON",
+    (value) => {
+      if (!value) return true;
+
+      try {
+        JSON.parse(value);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  ),
 });
 
 const ProductForm = ({
@@ -53,21 +72,40 @@ const ProductForm = ({
 }: ProductFormProps) => {
   const initialValues: ProductFormData = {
     name: editingProduct?.name ?? "",
+
     slug: editingProduct?.slug ?? "",
+
     description: editingProduct?.description ?? "",
+
     price: editingProduct?.price ? String(editingProduct.price) : "",
+
     categoryId: editingProduct?.categoryId
       ? String(editingProduct.categoryId)
+      : "",
+
+    detailsJson: editingProduct?.detailsJson
+      ? JSON.stringify(editingProduct.detailsJson, null, 2)
       : "",
   };
 
   const handleSubmit = (values: ProductFormData) => {
+    let detailsJson: object | undefined;
+
+    if (values.detailsJson) {
+      try {
+        detailsJson = JSON.parse(values.detailsJson);
+      } catch {
+        return;
+      }
+    }
+
     onSubmit({
       name: values.name,
       slug: values.slug,
       description: values.description || undefined,
       price: Number(values.price),
       categoryId: Number(values.categoryId),
+      detailsJson,
     });
   };
 
@@ -153,6 +191,25 @@ const ProductForm = ({
             </Field>
 
             <ErrorMessage name="categoryId" component="p" />
+          </div>
+
+          {/* Details JSON */}
+          <div>
+            <label htmlFor="detailsJson">Product Details</label>
+
+            <Field
+              as="textarea"
+              id="detailsJson"
+              name="detailsJson"
+              rows={8}
+              placeholder={`{
+  "color": "black",
+  "size": "XL",
+  "material": "cotton"
+}`}
+            />
+
+            <ErrorMessage name="detailsJson" component="p" />
           </div>
 
           {/* Buttons */}

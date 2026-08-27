@@ -1,13 +1,52 @@
-// src/types/product.ts
-import type { Seo } from "./seo";
-export interface Product {
+export interface ProductImage {
+  id: number;
+  url: string;
+  createdAt?: string;
+}
+
+export interface ProductMedia {
+  id: number;
+  url: string;
+  type?: string;
+  createdAt?: string;
+}
+
+export interface ProductCategory {
   id: number;
   name: string;
-  price: number;
   description?: string;
+}
+
+export interface ProductSeo {
+  id: number;
+  title: string;
+  description?: string;
+  canonicalUrl?: string;
+}
+
+export interface Product {
+  id: number;
+
+  name: string;
   slug: string;
-  detailsJson?: string;
+  description?: string;
+
+  price: number;
+
   categoryId: number;
-  galleryId: number;
-  seo?: Seo;
+
+  detailsJson?: object;
+
+  category?: ProductCategory;
+
+  seo?: ProductSeo;
+
+  gallery?: {
+    id: number;
+    images: ProductImage[];
+    media: ProductMedia[];
+  };
+
+  createdAt?: string;
+  updatedAt?: string;
 }
