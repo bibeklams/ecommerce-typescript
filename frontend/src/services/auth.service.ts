@@ -1,6 +1,10 @@
 import api from "./api";
+import axios from "axios";
 import type { User } from "../types/user";
-
+const refreshApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true,
+});
 export const register = async (data: {
   name: string;
   email: string;
@@ -21,7 +25,8 @@ export const logout = async () => {
 };
 
 export const refreshToken = async () => {
-  const response = await api.post("/auth/refresh-token");
+  const response = await refreshApi.post("/auth/refresh-token");
+
   return response.data;
 };
 
