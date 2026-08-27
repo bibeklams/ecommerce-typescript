@@ -5,7 +5,7 @@ import type { Request, Response, NextFunction } from "express";
 export const register = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { name, email, password } = req.body;
@@ -28,7 +28,7 @@ export const register = async (
 export const login = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { email, password } = req.body;
@@ -63,53 +63,59 @@ export const login = async (
     next(error);
   }
 };
-export const logout = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const logout = (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
 
-  res.status(200).json({
-    success: true,
-    message: "Logout successful",
-  });
+    res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
   } catch (error) {
-   next(error) 
+    next(error);
   }
 };
-export const refreshToken=async (req:Request,res:Response,next:NextFunction) => {
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const {refreshToken}=req.cookies;
-    const result=await authService.refreshToken(refreshToken);
-    res.status(200).json({
-  success: true,
-  data: result,
-});
-  } catch (error) {
-    next(error)
-  }
-}
+    const { refreshToken } = req.cookies;
 
-export const profile=async(req:Request,res:Response,next:NextFunction)=>{
-try {
-  const user=req.user
-  res.status(200).json({
-    sucess:true,
-    user
-  })
-} catch (error) {
-  next(error)
-}
-}
+    const result = await authService.refreshToken(refreshToken);
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const profile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = req.user;
+    res.status(200).json({
+      sucess: true,
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
