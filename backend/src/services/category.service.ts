@@ -61,7 +61,7 @@ export const createCategory = async (
 export const getAllCategories = async (
   search: string = "",
   page: number = 1,
-  limit: number = 10,
+  limit: number = 20,
 ) => {
   const skip = (page - 1) * limit;
 
@@ -93,10 +93,6 @@ export const getAllCategories = async (
     take: limit,
   });
 
-  if (categories.length === 0) {
-    throw createError(404, "No categories found");
-  }
-
   // 3. Get total count
   const total = await prisma.category.count({
     where: {
@@ -108,6 +104,7 @@ export const getAllCategories = async (
     },
   });
 
+  // 4. Create response
   const result = {
     categories,
     total,
@@ -116,12 +113,11 @@ export const getAllCategories = async (
     totalPages: Math.ceil(total / limit),
   };
 
-  // 4. Store in Redis
+  // 5. Store in Redis
   await redis.set(cacheKey, JSON.stringify(result), "EX", 300);
 
   return result;
 };
-
 export const countCategories = async () => {
   const cacheKey = "categories:count";
 

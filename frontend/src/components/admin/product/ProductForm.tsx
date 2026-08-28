@@ -11,6 +11,8 @@ type ProductFormData = {
   price: string;
   categoryId: string;
   detailsJson: string;
+  images: File[];
+  media: File[];
 };
 
 interface ProductFormProps {
@@ -25,6 +27,8 @@ interface ProductFormProps {
     price: number;
     categoryId: number;
     detailsJson?: object;
+    images?: File[];
+    media?: File[];
   }) => void;
 
   onCancel: () => void;
@@ -86,6 +90,12 @@ const ProductForm = ({
     detailsJson: editingProduct?.detailsJson
       ? JSON.stringify(editingProduct.detailsJson, null, 2)
       : "",
+
+    // New files selected by the user
+    images: [],
+
+    // Optional
+    media: [],
   };
 
   const handleSubmit = (values: ProductFormData) => {
@@ -105,7 +115,14 @@ const ProductForm = ({
       description: values.description || undefined,
       price: Number(values.price),
       categoryId: Number(values.categoryId),
+
       detailsJson,
+
+      // Images
+      images: values.images.length > 0 ? values.images : undefined,
+
+      // Media is optional
+      media: values.media.length > 0 ? values.media : undefined,
     });
   };
 
@@ -119,114 +136,175 @@ const ProductForm = ({
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        <Form>
-          {/* Name */}
-          <div>
-            <label htmlFor="name">Name</label>
+        {({ setFieldValue }) => (
+          <Form>
+            {/* =========================
+                NAME
+            ========================= */}
+            <div>
+              <label htmlFor="name">Name</label>
 
-            <Field
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Enter product name"
-            />
+              <Field
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Enter product name"
+              />
 
-            <ErrorMessage name="name" component="p" />
-          </div>
+              <ErrorMessage name="name" component="p" />
+            </div>
 
-          {/* Slug */}
-          <div>
-            <label htmlFor="slug">Slug</label>
+            {/* =========================
+                SLUG
+            ========================= */}
+            <div>
+              <label htmlFor="slug">Slug</label>
 
-            <Field
-              id="slug"
-              name="slug"
-              type="text"
-              placeholder="Enter product slug"
-            />
+              <Field
+                id="slug"
+                name="slug"
+                type="text"
+                placeholder="Enter product slug"
+              />
 
-            <ErrorMessage name="slug" component="p" />
-          </div>
+              <ErrorMessage name="slug" component="p" />
+            </div>
 
-          {/* Description */}
-          <div>
-            <label htmlFor="description">Description</label>
+            {/* =========================
+                DESCRIPTION
+            ========================= */}
+            <div>
+              <label htmlFor="description">Description</label>
 
-            <Field
-              as="textarea"
-              id="description"
-              name="description"
-              placeholder="Enter product description"
-            />
+              <Field
+                as="textarea"
+                id="description"
+                name="description"
+                placeholder="Enter product description"
+              />
 
-            <ErrorMessage name="description" component="p" />
-          </div>
+              <ErrorMessage name="description" component="p" />
+            </div>
 
-          {/* Price */}
-          <div>
-            <label htmlFor="price">Price</label>
+            {/* =========================
+                PRICE
+            ========================= */}
+            <div>
+              <label htmlFor="price">Price</label>
 
-            <Field
-              id="price"
-              name="price"
-              type="number"
-              placeholder="Enter price"
-            />
+              <Field
+                id="price"
+                name="price"
+                type="number"
+                placeholder="Enter price"
+              />
 
-            <ErrorMessage name="price" component="p" />
-          </div>
+              <ErrorMessage name="price" component="p" />
+            </div>
 
-          {/* Category */}
-          <div>
-            <label htmlFor="categoryId">Category</label>
+            {/* =========================
+                CATEGORY
+            ========================= */}
+            <div>
+              <label htmlFor="categoryId">Category</label>
 
-            <Field as="select" id="categoryId" name="categoryId">
-              <option value="">Select Category</option>
+              <Field as="select" id="categoryId" name="categoryId">
+                <option value="">Select Category</option>
 
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </Field>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Field>
 
-            <ErrorMessage name="categoryId" component="p" />
-          </div>
+              <ErrorMessage name="categoryId" component="p" />
+            </div>
 
-          {/* Details JSON */}
-          <div>
-            <label htmlFor="detailsJson">Product Details</label>
+            {/* =========================
+                DETAILS JSON
+            ========================= */}
+            <div>
+              <label htmlFor="detailsJson">Product Details</label>
 
-            <Field
-              as="textarea"
-              id="detailsJson"
-              name="detailsJson"
-              rows={8}
-              placeholder={`{
+              <Field
+                as="textarea"
+                id="detailsJson"
+                name="detailsJson"
+                rows={8}
+                placeholder={`{
   "color": "black",
   "size": "XL",
   "material": "cotton"
 }`}
-            />
+              />
 
-            <ErrorMessage name="detailsJson" component="p" />
-          </div>
+              <ErrorMessage name="detailsJson" component="p" />
+            </div>
 
-          {/* Buttons */}
-          <div>
-            <button type="submit" disabled={loading}>
-              {loading
-                ? "Saving..."
-                : editingProduct
-                  ? "Update Product"
-                  : "Add Product"}
-            </button>
+            {/* =========================
+                PRODUCT IMAGES
+            ========================= */}
+            <div>
+              <label htmlFor="images">Product Images</label>
 
-            <button type="button" onClick={onCancel} disabled={loading}>
-              Cancel
-            </button>
-          </div>
-        </Form>
+              <input
+                id="images"
+                name="images"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(event) => {
+                  const files = Array.from(event.currentTarget.files ?? []);
+
+                  setFieldValue("images", files);
+                }}
+              />
+
+              <small>Select one or more product images.</small>
+            </div>
+
+            {/* =========================
+                PRODUCT MEDIA
+                OPTIONAL
+            ========================= */}
+            <div>
+              <label htmlFor="media">Product Media (Optional)</label>
+
+              <input
+                id="media"
+                name="media"
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={(event) => {
+                  const files = Array.from(event.currentTarget.files ?? []);
+
+                  setFieldValue("media", files);
+                }}
+              />
+
+              <small>Optional product videos or other media.</small>
+            </div>
+
+            {/* =========================
+                BUTTONS
+            ========================= */}
+            <div>
+              <button type="submit" disabled={loading}>
+                {loading
+                  ? "Saving..."
+                  : editingProduct
+                    ? "Update Product"
+                    : "Add Product"}
+              </button>
+
+              <button type="button" onClick={onCancel} disabled={loading}>
+                Cancel
+              </button>
+            </div>
+          </Form>
+        )}
       </Formik>
     </section>
   );

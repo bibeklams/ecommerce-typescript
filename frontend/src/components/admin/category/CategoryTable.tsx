@@ -17,6 +17,7 @@ const CategoryTable = ({
     <section>
       <h2>Category List</h2>
 
+      {/* Loading */}
       {loading && categories.length === 0 ? (
         <p>Loading categories...</p>
       ) : categories.length === 0 ? (
@@ -26,6 +27,7 @@ const CategoryTable = ({
           <thead>
             <tr>
               <th>ID</th>
+              <th>Image</th>
               <th>Name</th>
               <th>Description</th>
               <th>Parent</th>
@@ -41,14 +43,33 @@ const CategoryTable = ({
 
               return (
                 <tr key={category.id}>
+                  {/* ID */}
                   <td>{category.id}</td>
 
+                  {/* IMAGE */}
+                  <td>
+                    {category.categoryImage?.url ? (
+                      <img
+                        src={category.categoryImage.url}
+                        alt={category.name}
+                        width={80}
+                        height={80}
+                      />
+                    ) : (
+                      <span>No image</span>
+                    )}
+                  </td>
+
+                  {/* NAME */}
                   <td>{category.name}</td>
 
+                  {/* DESCRIPTION */}
                   <td>{category.description || "-"}</td>
 
+                  {/* PARENT */}
                   <td>{parentCategory?.name || "No Parent"}</td>
 
+                  {/* ACTIONS */}
                   <td>
                     <button type="button" onClick={() => onEdit(category)}>
                       Edit

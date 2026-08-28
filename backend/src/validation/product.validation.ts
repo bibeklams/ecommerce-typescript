@@ -1,25 +1,45 @@
 import { z } from "zod";
 
-export const createProduct = z.object({
-  name: z.string().trim().max(50, { message: "Too long character for name" }),
+const detailsJsonSchema = z.preprocess((value) => {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
 
-  price: z.number().positive(),
+  return value;
+}, z.record(z.string(), z.any()).optional());
+
+export const createProduct = z.object({
+  name: z.string().trim().max(50, {
+    message: "Too long character for name",
+  }),
+
+  price: z.coerce.number().positive(),
 
   description: z.string().trim().optional(),
 
-  detailsJson: z.record(z.string(), z.any()).optional(),
+  detailsJson: detailsJsonSchema,
 
-  categoryId: z.number().int().positive(),
+  categoryId: z.coerce.number().int().positive(),
 });
 
 export const updateProduct = z.object({
-  name: z.string().trim().max(50, { message: "Too long character for name" }),
+  name: z
+    .string()
+    .trim()
+    .max(50, {
+      message: "Too long character for name",
+    })
+    .optional(),
 
-  price: z.number().positive(),
+  price: z.coerce.number().positive().optional(),
 
   description: z.string().trim().optional(),
 
-  detailsJson: z.record(z.string(), z.any()).optional(),
+  detailsJson: detailsJsonSchema,
 
-  categoryId: z.number().int().positive(),
+  categoryId: z.coerce.number().int().positive().optional(),
 });

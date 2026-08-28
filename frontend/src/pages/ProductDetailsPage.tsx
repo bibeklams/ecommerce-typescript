@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-
 import { getSingleProductThunk } from "../redux/slices/productSlice";
 
 const ProductDetailsPage = () => {
@@ -39,7 +38,7 @@ const ProductDetailsPage = () => {
       <p>Category: {product.category?.name ?? "Unknown"}</p>
 
       {/* Price */}
-      <p>Price: ${product.price}</p>
+      <p>Price: Rs. {product.price}</p>
 
       {/* Description */}
       {product.description && (
@@ -86,23 +85,6 @@ const ProductDetailsPage = () => {
           <h2>Product Details</h2>
 
           <pre>{JSON.stringify(product.detailsJson, null, 2)}</pre>
-        </section>
-      )}
-
-      {/* SEO */}
-      {product.seo && (
-        <section>
-          <h2>SEO</h2>
-
-          <p>Title: {product.seo.title}</p>
-
-          {product.seo.description && (
-            <p>Description: {product.seo.description}</p>
-          )}
-
-          {product.seo.canonicalUrl && (
-            <p>Canonical URL: {product.seo.canonicalUrl}</p>
-          )}
         </section>
       )}
     </main>

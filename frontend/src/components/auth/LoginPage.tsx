@@ -35,10 +35,13 @@ const LoginPage = () => {
 
     if (login.fulfilled.match(result)) {
       toast.success("Login successful");
-
       resetForm();
 
-      navigate("/home");
+      if (result.payload.role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
     }
   };
 

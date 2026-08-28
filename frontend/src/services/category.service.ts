@@ -1,6 +1,15 @@
 import api from "./api";
 import type { Category } from "../types/category";
 
+export type GetAllCategoriesResponse = {
+  categories: Category[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+// CREATE
 export const createCategory = async (data: {
   name: string;
   description?: string;
@@ -25,27 +34,34 @@ export const createCategory = async (data: {
 
   const response = await api.post("/categories", formData);
 
-  return response.data;
+  return response.data.data;
 };
 
-export const getAllCategories = async (): Promise<Category[]> => {
-  const response = await api.get("/categories");
+// GET ALL
+export const getAllCategories = async (
+  search = "",
+  page = 1,
+  limit = 20,
+): Promise<GetAllCategoriesResponse> => {
+  const response = await api.get("/categories", {
+    params: {
+      search,
+      page,
+      limit,
+    },
+  });
 
-  return response.data;
+  return response.data.data;
 };
 
+// GET SINGLE
 export const getSingleCategory = async (id: number): Promise<Category> => {
   const response = await api.get(`/categories/${id}`);
 
-  return response.data;
+  return response.data.data;
 };
 
-export const countCategories = async () => {
-  const response = await api.get("/categories/count");
-
-  return response.data;
-};
-
+// UPDATE
 export const updateCategory = async (
   id: number,
   data: {
@@ -75,11 +91,19 @@ export const updateCategory = async (
 
   const response = await api.put(`/categories/${id}`, formData);
 
-  return response.data;
+  return response.data.data;
 };
 
+// DELETE
 export const deleteCategory = async (id: number) => {
   const response = await api.delete(`/categories/${id}`);
 
-  return response.data;
+  return response.data.data;
+};
+
+// COUNT
+export const countCategories = async (): Promise<number> => {
+  const response = await api.get("/categories/count");
+
+  return response.data.data;
 };

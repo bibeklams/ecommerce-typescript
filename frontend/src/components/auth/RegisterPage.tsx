@@ -14,7 +14,8 @@ type RegisterData = {
 
 const registerSchema = Yup.object({
   name: Yup.string()
-    .min(2, "Name must be at least 2 characters")
+    .min(4, "Name must be at least 4 characters")
+    .max(20, "Name must not exceed 20 characters")
     .required("Name is required"),
 
   email: Yup.string()

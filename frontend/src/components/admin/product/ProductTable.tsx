@@ -1,9 +1,7 @@
 import type { Product } from "../../../types/product";
-import type { Category } from "../../../types/category";
 
 interface ProductTableProps {
   products: Product[];
-  categories: Category[];
   loading: boolean;
   onEdit: (product: Product) => void;
   onDelete: (id: number) => void;
@@ -11,7 +9,6 @@ interface ProductTableProps {
 
 const ProductTable = ({
   products,
-  categories,
   loading,
   onEdit,
   onDelete,
@@ -20,6 +17,7 @@ const ProductTable = ({
     <section>
       <h2>Product List</h2>
 
+      {/* Loading */}
       {loading && products.length === 0 ? (
         <p>Loading products...</p>
       ) : products.length === 0 ? (
@@ -29,44 +27,99 @@ const ProductTable = ({
           <thead>
             <tr>
               <th>ID</th>
+              <th>Image</th>
               <th>Name</th>
               <th>Slug</th>
               <th>Price</th>
               <th>Category</th>
+              <th>Media</th>
               <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {products.map((product) => {
-              const category = categories.find(
-                (category) => category.id === product.categoryId,
-              );
+            {products.map((product) => (
+              <tr key={product.id}>
+                {/* =====================
+                    ID
+                ====================== */}
+                <td>{product.id}</td>
 
-              return (
-                <tr key={product.id}>
-                  <td>{product.id}</td>
+                {/* =====================
+                    IMAGE
+                ====================== */}
+                <td>
+                  {product.gallery?.images &&
+                  product.gallery.images.length > 0 ? (
+                    <img
+                      src={product.gallery.images[0].url}
+                      alt={product.name}
+                      width={80}
+                      height={80}
+                    />
+                  ) : (
+                    <span>No image</span>
+                  )}
+                </td>
 
-                  <td>{product.name}</td>
+                {/* =====================
+                    NAME
+                ====================== */}
+                <td>{product.name}</td>
 
-                  <td>{product.slug}</td>
+                {/* =====================
+                    SLUG
+                ====================== */}
+                <td>{product.slug}</td>
 
-                  <td>{product.price}</td>
+                {/* =====================
+                    PRICE
+                ====================== */}
+                <td>{product.price}</td>
 
-                  <td>{category?.name ?? "Unknown"}</td>
+                {/* =====================
+                    CATEGORY
+                ====================== */}
+                <td>{product.category?.name ?? "Unknown"}</td>
 
-                  <td>
-                    <button type="button" onClick={() => onEdit(product)}>
-                      Edit
-                    </button>
+                {/* =====================
+                    MEDIA
+                ====================== */}
+                <td>
+                  {product.gallery?.media &&
+                  product.gallery.media.length > 0 ? (
+                    <div>
+                      {product.gallery.media.map((media) => (
+                        <div key={media.id}>
+                          <a
+                            href={media.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View media
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span>No media</span>
+                  )}
+                </td>
 
-                    <button type="button" onClick={() => onDelete(product.id)}>
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                {/* =====================
+                    ACTIONS
+                ====================== */}
+                <td>
+                  <button type="button" onClick={() => onEdit(product)}>
+                    Edit
+                  </button>
+
+                  <button type="button" onClick={() => onDelete(product.id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       )}

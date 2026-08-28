@@ -1,6 +1,7 @@
 import api from "./api";
 import axios from "axios";
 import type { User } from "../types/user";
+
 const refreshApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
@@ -16,7 +17,10 @@ export const register = async (data: {
 
 export const login = async (data: { email: string; password: string }) => {
   const response = await api.post("/auth/login", data);
-  return response.data;
+
+  console.log(response.data);
+
+  return response.data.data.user;
 };
 
 export const logout = async () => {

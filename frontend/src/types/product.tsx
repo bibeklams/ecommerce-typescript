@@ -1,3 +1,5 @@
+import type { Category } from "./category";
+
 export interface ProductImage {
   id: number;
   url: string;
@@ -7,46 +9,26 @@ export interface ProductImage {
 export interface ProductMedia {
   id: number;
   url: string;
-  type?: string;
+  type: string;
   createdAt?: string;
 }
 
-export interface ProductCategory {
+export interface ProductGallery {
   id: number;
-  name: string;
-  description?: string;
-}
-
-export interface ProductSeo {
-  id: number;
-  title: string;
-  description?: string;
-  canonicalUrl?: string;
+  images: ProductImage[];
+  media: ProductMedia[];
 }
 
 export interface Product {
   id: number;
-
   name: string;
   slug: string;
   description?: string;
-
   price: number;
-
   categoryId: number;
+  detailsJson?: Record<string, unknown>;
 
-  detailsJson?: object;
+  category?: Category;
 
-  category?: ProductCategory;
-
-  seo?: ProductSeo;
-
-  gallery?: {
-    id: number;
-    images: ProductImage[];
-    media: ProductMedia[];
-  };
-
-  createdAt?: string;
-  updatedAt?: string;
+  gallery?: ProductGallery;
 }

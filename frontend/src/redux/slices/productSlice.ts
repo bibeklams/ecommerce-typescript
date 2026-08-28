@@ -11,33 +11,64 @@ import {
   countProducts,
 } from "../../services/product.service";
 
-type GetProductsParams = {
+// =========================
+// TYPES
+// =========================
+
+export type GetProductsParams = {
   search?: string;
   page?: number;
   limit?: number;
 };
+
+export type GetProductsResponse = {
+  products: Product[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+// =========================
+// STATE
+// =========================
+
 interface ProductState {
   products: Product[];
   product: Product | null;
+
+  // Pagination
   count: number;
   page: number;
   limit: number;
+  totalPages: number;
 
   loading: boolean;
   error: string | null;
 }
 
+// =========================
+// INITIAL STATE
+// =========================
+
 const initialState: ProductState = {
   products: [],
   product: null,
+
   count: 0,
   page: 1,
   limit: 20,
+  totalPages: 0,
+
   loading: false,
   error: null,
 };
 
-type CreateProductData = {
+// =========================
+// CREATE PRODUCT DATA
+// =========================
+
+export type CreateProductData = {
   name: string;
   slug: string;
   description?: string;
@@ -48,7 +79,11 @@ type CreateProductData = {
   media?: File[];
 };
 
-type UpdateProductData = {
+// =========================
+// UPDATE PRODUCT DATA
+// =========================
+
+export type UpdateProductData = {
   name?: string;
   slug?: string;
   description?: string;
@@ -59,68 +94,105 @@ type UpdateProductData = {
   media?: File[];
 };
 
-// CREATE
+// =========================
+// CREATE PRODUCT
+// =========================
+
 export const createProductThunk = createAsyncThunk<Product, CreateProductData>(
   "product/createProduct",
+
   async (data) => {
     const response = await createProduct(data);
+
     return response;
   },
 );
 
-// GET ALL
+// =========================
+// GET ALL PRODUCTS
+// =========================
+
 export const getAllProductsThunk = createAsyncThunk<
-  {
-    products: Product[];
-    total: number;
-    page: number;
-    limit: number;
+  GetProductsResponse,
+  GetProductsParams | undefined
+>(
+  "product/getAllProducts",
+  async ({ search = "", page = 1, limit = 20 } = {}) => {
+    const response = await getAllProducts(search, page, limit);
+
+    return response;
   },
-  GetProductsParams
->("product/getAllProducts", async ({ search = "", page = 1, limit = 10 }) => {
-  const response = await getAllProducts(search, page, limit);
+);
 
-  return response;
-});
+// =========================
+// GET SINGLE PRODUCT
+// =========================
 
-// GET SINGLE
 export const getSingleProductThunk = createAsyncThunk<Product, number>(
   "product/getSingleProduct",
+
   async (id) => {
     const response = await getSingleProduct(id);
+
     return response;
   },
 );
 
-// UPDATE
+// =========================
+// UPDATE PRODUCT
+// =========================
+
 export const updateProductThunk = createAsyncThunk<
   Product,
-  { id: number; data: UpdateProductData }
->("product/updateProduct", async ({ id, data }) => {
-  const response = await updateProduct(id, data);
-  return response;
-});
+  {
+    id: number;
+    data: UpdateProductData;
+  }
+>(
+  "product/updateProduct",
 
-// DELETE
+  async ({ id, data }) => {
+    const response = await updateProduct(id, data);
+
+    return response;
+  },
+);
+
+// =========================
+// DELETE PRODUCT
+// =========================
+
 export const deleteProductThunk = createAsyncThunk<Product, number>(
   "product/deleteProduct",
+
   async (id) => {
     const response = await deleteProduct(id);
+
     return response;
   },
 );
 
-// COUNT
+// =========================
+// COUNT PRODUCTS
+// =========================
+
 export const countProductsThunk = createAsyncThunk<number>(
-  "product/count",
+  "product/countProducts",
+
   async () => {
     const response = await countProducts();
+
     return response;
   },
 );
+
+// =========================
+// SLICE
+// =========================
 
 const productSlice = createSlice({
   name: "product",
+
   initialState,
 
   reducers: {},
@@ -137,17 +209,23 @@ const productSlice = createSlice({
 
     builder.addCase(createProductThunk.fulfilled, (state, action) => {
       state.loading = false;
+
       state.product = action.payload;
-      state.products.push(action.payload);
+
       state.count += 1;
+
+      state.error = null;
     });
 
     builder.addCase(createProductThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to create product";
     });
 
+    // =========================
     // GET ALL PRODUCTS
+    // =========================
 
     builder.addCase(getAllProductsThunk.pending, (state) => {
       state.loading = true;
@@ -158,18 +236,27 @@ const productSlice = createSlice({
       state.loading = false;
 
       state.products = action.payload.products;
+
+      state.count = action.payload.total;
+
       state.page = action.payload.page;
+
       state.limit = action.payload.limit;
+
+      state.totalPages = action.payload.totalPages;
 
       state.error = null;
     });
 
     builder.addCase(getAllProductsThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to get products";
     });
 
+    // =========================
     // GET SINGLE PRODUCT
+    // =========================
 
     builder.addCase(getSingleProductThunk.pending, (state) => {
       state.loading = true;
@@ -178,11 +265,15 @@ const productSlice = createSlice({
 
     builder.addCase(getSingleProductThunk.fulfilled, (state, action) => {
       state.loading = false;
+
       state.product = action.payload;
+
+      state.error = null;
     });
 
     builder.addCase(getSingleProductThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to get product";
     });
 
@@ -198,10 +289,10 @@ const productSlice = createSlice({
     builder.addCase(updateProductThunk.fulfilled, (state, action) => {
       state.loading = false;
 
-      // Update currently selected product
+      // Selected product
       state.product = action.payload;
 
-      // Update product inside products array
+      // Update product in current list
       const index = state.products.findIndex(
         (product) => product.id === action.payload.id,
       );
@@ -209,14 +300,19 @@ const productSlice = createSlice({
       if (index !== -1) {
         state.products[index] = action.payload;
       }
+
+      state.error = null;
     });
 
     builder.addCase(updateProductThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to update product";
     });
 
+    // =========================
     // DELETE PRODUCT
+    // =========================
 
     builder.addCase(deleteProductThunk.pending, (state) => {
       state.loading = true;
@@ -230,20 +326,24 @@ const productSlice = createSlice({
         (product) => product.id !== action.payload.id,
       );
 
-      state.count -= 1;
+      state.count = Math.max(0, state.count - 1);
 
-      // If deleted product is currently selected
       if (state.product?.id === action.payload.id) {
         state.product = null;
       }
+
+      state.error = null;
     });
 
     builder.addCase(deleteProductThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to delete product";
     });
 
+    // =========================
     // COUNT PRODUCTS
+    // =========================
 
     builder.addCase(countProductsThunk.pending, (state) => {
       state.loading = true;
@@ -252,11 +352,15 @@ const productSlice = createSlice({
 
     builder.addCase(countProductsThunk.fulfilled, (state, action) => {
       state.loading = false;
+
       state.count = action.payload;
+
+      state.error = null;
     });
 
     builder.addCase(countProductsThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to count products";
     });
   },

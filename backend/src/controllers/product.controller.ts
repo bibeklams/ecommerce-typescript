@@ -8,9 +8,7 @@ export const createProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, description, price, detailsJson } = req.body;
-
-    const categoryId = Number(req.params.categoryId);
+    const { name, description, price, detailsJson, categoryId } = req.body;
 
     const files = req.files as {
       images?: Express.Multer.File[];
@@ -25,7 +23,7 @@ export const createProduct = async (
         name,
         description,
         price: Number(price),
-        categoryId,
+        categoryId: Number(categoryId),
         detailsJson,
       },
       imageFiles,

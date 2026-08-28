@@ -9,23 +9,49 @@ import {
   deleteCategory,
   updateCategory,
   countCategories,
+  type GetAllCategoriesResponse,
 } from "../../services/category.service";
+
+// =========================
+// STATE
+// =========================
 
 interface CategoryState {
   categories: Category[];
+
   category: Category | null;
+
   count: number;
+
+  page: number;
+
+  limit: number;
+
+  totalPages: number;
+
   loading: boolean;
+
   error: string | null;
 }
+
+// =========================
+// INITIAL STATE
+// =========================
 
 const initialState: CategoryState = {
   categories: [],
   category: null,
   count: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 0,
   loading: false,
   error: null,
 };
+
+// =========================
+// TYPES
+// =========================
 
 type CreateCategoryData = {
   name: string;
@@ -41,69 +67,98 @@ type UpdateCategoryData = {
   categoryImage?: File;
 };
 
+type GetCategoriesParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+// =========================
 // CREATE CATEGORY
+// =========================
+
 export const createCategoryThunk = createAsyncThunk<
   Category,
   CreateCategoryData
 >("category/createCategory", async (data) => {
-  const response = await createCategory(data);
-  return response;
+  return await createCategory(data);
 });
 
+// =========================
 // GET ALL CATEGORIES
-export const getAllCategoriesThunk = createAsyncThunk<Category[]>(
+// =========================
+
+export const getAllCategoriesThunk = createAsyncThunk<
+  GetAllCategoriesResponse,
+  GetCategoriesParams | undefined
+>(
   "category/getAllCategories",
-  async () => {
-    const response = await getAllCategories();
-    return response;
+  async ({ search = "", page = 1, limit = 20 } = {}) => {
+    return await getAllCategories(search, page, limit);
   },
 );
 
+// =========================
 // GET SINGLE CATEGORY
+// =========================
+
 export const getSingleCategoryThunk = createAsyncThunk<Category, number>(
   "category/getSingleCategory",
   async (id) => {
-    const response = await getSingleCategory(id);
-    return response;
+    return await getSingleCategory(id);
   },
 );
 
+// =========================
 // UPDATE CATEGORY
+// =========================
+
 export const updateCategoryThunk = createAsyncThunk<
   Category,
-  { id: number; data: UpdateCategoryData }
+  {
+    id: number;
+    data: UpdateCategoryData;
+  }
 >("category/updateCategory", async ({ id, data }) => {
-  const response = await updateCategory(id, data);
-  return response;
+  return await updateCategory(id, data);
 });
 
+// =========================
 // DELETE CATEGORY
+// =========================
+
 export const deleteCategoryThunk = createAsyncThunk<Category, number>(
   "category/deleteCategory",
   async (id) => {
-    const response = await deleteCategory(id);
-    return response;
+    return await deleteCategory(id);
   },
 );
 
-// COUNT CATEGORIES
+// =========================
+// COUNT CATEGORY
+// =========================
+
 export const countCategoryThunk = createAsyncThunk<number>(
   "category/countCategory",
   async () => {
-    const response = await countCategories();
-    return response;
+    return await countCategories();
   },
 );
 
+// =========================
+// SLICE
+// =========================
+
 const categorySlice = createSlice({
   name: "category",
+
   initialState,
 
   reducers: {},
 
   extraReducers: (builder) => {
     // =================================
-    // CREATE CATEGORY
+    // CREATE
     // =================================
 
     builder.addCase(createCategoryThunk.pending, (state) => {
@@ -115,7 +170,9 @@ const categorySlice = createSlice({
       state.loading = false;
 
       state.category = action.payload;
+
       state.categories.push(action.payload);
+
       state.count += 1;
 
       state.error = null;
@@ -123,11 +180,12 @@ const categorySlice = createSlice({
 
     builder.addCase(createCategoryThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to create category";
     });
 
     // =================================
-    // GET ALL CATEGORIES
+    // GET ALL
     // =================================
 
     builder.addCase(getAllCategoriesThunk.pending, (state) => {
@@ -137,9 +195,11 @@ const categorySlice = createSlice({
 
     builder.addCase(getAllCategoriesThunk.fulfilled, (state, action) => {
       state.loading = false;
-
-      state.categories = action.payload;
-
+      state.categories = action.payload.categories;
+      state.count = action.payload.total;
+      state.page = action.payload.page;
+      state.limit = action.payload.limit;
+      state.totalPages = action.payload.totalPages;
       state.error = null;
     });
 
@@ -148,10 +208,7 @@ const categorySlice = createSlice({
       state.error = action.error.message ?? "Failed to get categories";
     });
 
-    // =================================
-    // GET SINGLE CATEGORY
-    // =================================
-
+    // GET SINGLE
     builder.addCase(getSingleCategoryThunk.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -167,11 +224,12 @@ const categorySlice = createSlice({
 
     builder.addCase(getSingleCategoryThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to get category";
     });
 
     // =================================
-    // UPDATE CATEGORY
+    // UPDATE
     // =================================
 
     builder.addCase(updateCategoryThunk.pending, (state) => {
@@ -182,15 +240,12 @@ const categorySlice = createSlice({
     builder.addCase(updateCategoryThunk.fulfilled, (state, action) => {
       state.loading = false;
 
-      // Update currently selected category
       state.category = action.payload;
 
-      // Find the category inside the array
       const index = state.categories.findIndex(
         (category) => category.id === action.payload.id,
       );
 
-      // Replace old category with updated category
       if (index !== -1) {
         state.categories[index] = action.payload;
       }
@@ -200,11 +255,12 @@ const categorySlice = createSlice({
 
     builder.addCase(updateCategoryThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to update category";
     });
 
     // =================================
-    // DELETE CATEGORY
+    // DELETE
     // =================================
 
     builder.addCase(deleteCategoryThunk.pending, (state) => {
@@ -215,15 +271,12 @@ const categorySlice = createSlice({
     builder.addCase(deleteCategoryThunk.fulfilled, (state, action) => {
       state.loading = false;
 
-      // Remove deleted category from array
       state.categories = state.categories.filter(
         (category) => category.id !== action.payload.id,
       );
 
-      // Decrease count
-      state.count -= 1;
+      state.count = Math.max(0, state.count - 1);
 
-      // If currently selected category was deleted
       if (state.category?.id === action.payload.id) {
         state.category = null;
       }
@@ -233,11 +286,12 @@ const categorySlice = createSlice({
 
     builder.addCase(deleteCategoryThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to delete category";
     });
 
     // =================================
-    // COUNT CATEGORIES
+    // COUNT
     // =================================
 
     builder.addCase(countCategoryThunk.pending, (state) => {
@@ -255,6 +309,7 @@ const categorySlice = createSlice({
 
     builder.addCase(countCategoryThunk.rejected, (state, action) => {
       state.loading = false;
+
       state.error = action.error.message ?? "Failed to count categories";
     });
   },
