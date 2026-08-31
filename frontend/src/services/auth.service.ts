@@ -37,5 +37,5 @@ export const refreshToken = async () => {
 export const profile = async (): Promise<User> => {
   const response = await api.get("/auth/profile");
 
-  return response.data.data;
+  return response.data.user;
 };

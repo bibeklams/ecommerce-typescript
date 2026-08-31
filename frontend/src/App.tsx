@@ -8,6 +8,7 @@ const App = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    console.log("GET PROFILE STARTED");
     dispatch(getProfile());
   }, [dispatch]);
 

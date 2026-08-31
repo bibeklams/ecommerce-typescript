@@ -3,10 +3,10 @@ import AdminSidebar from "./AdminSidebar";
 
 const AdminLayout = () => {
   return (
-    <div>
+    <div className="flex min-h-screen">
       <AdminSidebar />
 
-      <main>
+      <main className="flex-1 p-6">
         <Outlet />
       </main>
     </div>

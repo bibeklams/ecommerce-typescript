@@ -19,7 +19,6 @@ interface ProductFormProps {
   categories: Category[];
   editingProduct: Product | null;
   loading: boolean;
-
   onSubmit: (data: {
     name: string;
     slug: string;
@@ -30,7 +29,6 @@ interface ProductFormProps {
     images?: File[];
     media?: File[];
   }) => void;
-
   onCancel: () => void;
 }
 
@@ -76,25 +74,16 @@ const ProductForm = ({
 }: ProductFormProps) => {
   const initialValues: ProductFormData = {
     name: editingProduct?.name ?? "",
-
     slug: editingProduct?.slug ?? "",
-
     description: editingProduct?.description ?? "",
-
     price: editingProduct?.price ? String(editingProduct.price) : "",
-
     categoryId: editingProduct?.categoryId
       ? String(editingProduct.categoryId)
       : "",
-
     detailsJson: editingProduct?.detailsJson
       ? JSON.stringify(editingProduct.detailsJson, null, 2)
       : "",
-
-    // New files selected by the user
     images: [],
-
-    // Optional
     media: [],
   };
 
@@ -115,20 +104,26 @@ const ProductForm = ({
       description: values.description || undefined,
       price: Number(values.price),
       categoryId: Number(values.categoryId),
-
       detailsJson,
-
-      // Images
       images: values.images.length > 0 ? values.images : undefined,
-
-      // Media is optional
       media: values.media.length > 0 ? values.media : undefined,
     });
   };
 
   return (
-    <section>
-      <h2>{editingProduct ? "Edit Product" : "Add Product"}</h2>
+    <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      {/* Header */}
+      <div className="mb-6 border-b border-gray-200 pb-4">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {editingProduct ? "Edit Product" : "Add Product"}
+        </h2>
+
+        <p className="mt-1 text-sm text-gray-500">
+          {editingProduct
+            ? "Update the product information below."
+            : "Add a new product to your store."}
+        </p>
+      </div>
 
       <Formik
         initialValues={initialValues}
@@ -137,95 +132,146 @@ const ProductForm = ({
         enableReinitialize
       >
         {({ setFieldValue }) => (
-          <Form>
-            {/* =========================
-                NAME
-            ========================= */}
+          <Form className="space-y-6">
+            {/* NAME */}
             <div>
-              <label htmlFor="name">Name</label>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Product Name
+              </label>
 
               <Field
                 id="name"
                 name="name"
                 type="text"
                 placeholder="Enter product name"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
               />
 
-              <ErrorMessage name="name" component="p" />
+              <ErrorMessage
+                name="name"
+                component="p"
+                className="mt-1 text-sm text-red-600"
+              />
             </div>
 
-            {/* =========================
-                SLUG
-            ========================= */}
+            {/* SLUG */}
             <div>
-              <label htmlFor="slug">Slug</label>
+              <label
+                htmlFor="slug"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Slug
+              </label>
 
               <Field
                 id="slug"
                 name="slug"
                 type="text"
-                placeholder="Enter product slug"
+                placeholder="example-product-name"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
               />
 
-              <ErrorMessage name="slug" component="p" />
+              <ErrorMessage
+                name="slug"
+                component="p"
+                className="mt-1 text-sm text-red-600"
+              />
             </div>
 
-            {/* =========================
-                DESCRIPTION
-            ========================= */}
+            {/* DESCRIPTION */}
             <div>
-              <label htmlFor="description">Description</label>
+              <label
+                htmlFor="description"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Description
+              </label>
 
               <Field
                 as="textarea"
                 id="description"
                 name="description"
+                rows={4}
                 placeholder="Enter product description"
+                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
               />
 
-              <ErrorMessage name="description" component="p" />
-            </div>
-
-            {/* =========================
-                PRICE
-            ========================= */}
-            <div>
-              <label htmlFor="price">Price</label>
-
-              <Field
-                id="price"
-                name="price"
-                type="number"
-                placeholder="Enter price"
+              <ErrorMessage
+                name="description"
+                component="p"
+                className="mt-1 text-sm text-red-600"
               />
-
-              <ErrorMessage name="price" component="p" />
             </div>
 
-            {/* =========================
-                CATEGORY
-            ========================= */}
-            <div>
-              <label htmlFor="categoryId">Category</label>
+            {/* PRICE + CATEGORY */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* PRICE */}
+              <div>
+                <label
+                  htmlFor="price"
+                  className="mb-2 block text-sm font-medium text-gray-800"
+                >
+                  Price
+                </label>
 
-              <Field as="select" id="categoryId" name="categoryId">
-                <option value="">Select Category</option>
+                <Field
+                  id="price"
+                  name="price"
+                  type="number"
+                  placeholder="Enter price"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                />
 
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Field>
+                <ErrorMessage
+                  name="price"
+                  component="p"
+                  className="mt-1 text-sm text-red-600"
+                />
+              </div>
 
-              <ErrorMessage name="categoryId" component="p" />
+              {/* CATEGORY */}
+              <div>
+                <label
+                  htmlFor="categoryId"
+                  className="mb-2 block text-sm font-medium text-gray-800"
+                >
+                  Category
+                </label>
+
+                <Field
+                  as="select"
+                  id="categoryId"
+                  name="categoryId"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                >
+                  <option value="">Select Category</option>
+
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Field>
+
+                <ErrorMessage
+                  name="categoryId"
+                  component="p"
+                  className="mt-1 text-sm text-red-600"
+                />
+              </div>
             </div>
 
-            {/* =========================
-                DETAILS JSON
-            ========================= */}
+            {/* DETAILS JSON */}
             <div>
-              <label htmlFor="detailsJson">Product Details</label>
+              <label
+                htmlFor="detailsJson"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Product Details
+              </label>
 
               <Field
                 as="textarea"
@@ -237,16 +283,28 @@ const ProductForm = ({
   "size": "XL",
   "material": "cotton"
 }`}
+                className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 font-mono text-sm outline-none transition focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
               />
 
-              <ErrorMessage name="detailsJson" component="p" />
+              <ErrorMessage
+                name="detailsJson"
+                component="p"
+                className="mt-1 text-sm text-red-600"
+              />
+
+              <p className="mt-1 text-xs text-gray-500">
+                Enter valid JSON for additional product information.
+              </p>
             </div>
 
-            {/* =========================
-                PRODUCT IMAGES
-            ========================= */}
+            {/* IMAGES */}
             <div>
-              <label htmlFor="images">Product Images</label>
+              <label
+                htmlFor="images"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Product Images
+              </label>
 
               <input
                 id="images"
@@ -259,17 +317,25 @@ const ProductForm = ({
 
                   setFieldValue("images", files);
                 }}
+                className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 file:mr-4 file:border-0 file:bg-black file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
               />
 
-              <small>Select one or more product images.</small>
+              <p className="mt-1 text-xs text-gray-500">
+                Select one or more product images.
+              </p>
             </div>
 
-            {/* =========================
-                PRODUCT MEDIA
-                OPTIONAL
-            ========================= */}
+            {/* MEDIA */}
             <div>
-              <label htmlFor="media">Product Media (Optional)</label>
+              <label
+                htmlFor="media"
+                className="mb-2 block text-sm font-medium text-gray-800"
+              >
+                Product Media
+                <span className="ml-2 font-normal text-gray-500">
+                  (Optional)
+                </span>
+              </label>
 
               <input
                 id="media"
@@ -282,16 +348,21 @@ const ProductForm = ({
 
                   setFieldValue("media", files);
                 }}
+                className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 file:mr-4 file:border-0 file:bg-black file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
               />
 
-              <small>Optional product videos or other media.</small>
+              <p className="mt-1 text-xs text-gray-500">
+                Optional product videos or other media.
+              </p>
             </div>
 
-            {/* =========================
-                BUTTONS
-            ========================= */}
-            <div>
-              <button type="submit" disabled={loading}>
+            {/* BUTTONS */}
+            <div className="flex items-center gap-3 border-t border-gray-200 pt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 {loading
                   ? "Saving..."
                   : editingProduct
@@ -299,7 +370,12 @@ const ProductForm = ({
                     : "Add Product"}
               </button>
 
-              <button type="button" onClick={onCancel} disabled={loading}>
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={loading}
+                className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 Cancel
               </button>
             </div>

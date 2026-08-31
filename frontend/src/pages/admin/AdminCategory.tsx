@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import toast from "react-hot-toast";
 
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -24,7 +23,6 @@ const AdminCategory = () => {
   );
 
   const [showForm, setShowForm] = useState(false);
-
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   // Get categories
@@ -56,7 +54,7 @@ const AdminCategory = () => {
     description?: string;
     parentId?: number;
   }) => {
-    // Update
+    // UPDATE
     if (editingCategory) {
       const result = await dispatch(
         updateCategoryThunk({
@@ -77,7 +75,7 @@ const AdminCategory = () => {
       return;
     }
 
-    // Create
+    // CREATE
     const result = await dispatch(createCategoryThunk(data));
 
     if (createCategoryThunk.fulfilled.match(result)) {
@@ -101,17 +99,30 @@ const AdminCategory = () => {
   };
 
   return (
-    <main>
-      <h1>Categories</h1>
+    <main className="min-h-screen bg-gray-50 p-6">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
 
-      {/* Add Category */}
-      {!showForm && (
-        <button type="button" onClick={handleAdd}>
-          Add Category
-        </button>
-      )}
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your store categories
+          </p>
+        </div>
 
-      {/* Add / Edit Form */}
+        {/* Add Category Button */}
+        {!showForm && (
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+          >
+            + Add Category
+          </button>
+        )}
+      </div>
+
+      {/* Form */}
       {showForm && (
         <CategoryForm
           categories={categories}
@@ -123,7 +134,11 @@ const AdminCategory = () => {
       )}
 
       {/* Redux Error */}
-      {error && <p>{error}</p>}
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+        </div>
+      )}
 
       {/* Category Table */}
       <CategoryTable

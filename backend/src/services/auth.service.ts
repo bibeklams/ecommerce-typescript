@@ -17,18 +17,27 @@ export const register = async (data: {
       email: data.email,
     },
   });
+
   if (existingUser) {
-    throw createError(400, "User already exist");
+    throw createError(400, "User already exists");
   }
 
+  // Hash password before storing it
   const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  // Create user
   const user = await prisma.user.create({
     data: {
-      ...data,
+      name: data.name,
+      email: data.email,
       password: hashedPassword,
     },
   });
-  return user;
+
+  // Remove password before returning user
+  const { password, ...safeUser } = user;
+
+  return safeUser;
 };
 export const login = async (data: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({

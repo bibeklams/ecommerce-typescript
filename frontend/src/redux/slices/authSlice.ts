@@ -13,6 +13,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  authChecked: boolean;
 }
 
 type RegisterData = {
@@ -30,6 +31,7 @@ const initialState: AuthState = {
   user: null,
   loading: false,
   error: null,
+  authChecked: false,
 };
 
 export const getProfile = createAsyncThunk<User>(
@@ -47,7 +49,6 @@ export const register = createAsyncThunk<User, RegisterData>(
     return response;
   },
 );
-
 export const login = createAsyncThunk<User, LoginData>(
   "auth/login",
   async (data) => {
@@ -74,10 +75,13 @@ const authSlice = createSlice({
     builder.addCase(getProfile.fulfilled, (state, action) => {
       state.loading = false;
       state.user = action.payload;
+      state.authChecked = true;
     });
 
     builder.addCase(getProfile.rejected, (state, action) => {
       state.loading = false;
+      state.user = null;
+      state.authChecked = true;
       state.error = action.error.message ?? "Failed to get profile";
     });
 

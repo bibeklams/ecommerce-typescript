@@ -1,7 +1,6 @@
 import * as authService from "../services/auth.service.js";
-
 import type { Request, Response, NextFunction } from "express";
-
+import createError from "http-errors";
 export const register = async (
   req: Request,
   res: Response,
@@ -25,6 +24,7 @@ export const register = async (
     next(error);
   }
 };
+
 export const login = async (
   req: Request,
   res: Response,
@@ -63,6 +63,7 @@ export const login = async (
     next(error);
   }
 };
+
 export const logout = (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie("accessToken", {
@@ -85,6 +86,7 @@ export const logout = (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 };
+
 export const refreshToken = async (
   req: Request,
   res: Response,
@@ -111,9 +113,16 @@ export const profile = async (
 ) => {
   try {
     const user = req.user;
+
+    if (!user) {
+      throw createError(401, "Not authenticated");
+    }
+
+    const { password: _password, ...safeUser } = user;
+
     res.status(200).json({
-      sucess: true,
-      user,
+      success: true,
+      user: safeUser,
     });
   } catch (error) {
     next(error);

@@ -10,6 +10,8 @@ import {
   deleteProductThunk,
 } from "../../redux/slices/productSlice";
 
+import { getAllCategoriesThunk } from "../../redux/slices/categorySlice";
+
 import type { Product } from "../../types/product";
 
 import ProductForm from "../../components/admin/product/ProductForm";
@@ -18,20 +20,41 @@ import ProductTable from "../../components/admin/product/ProductTable";
 const AdminProduct = () => {
   const dispatch = useAppDispatch();
 
-  const { products, loading, error } = useAppSelector((state) => state.product);
+  const {
+    products,
+    loading: productLoading,
+    error: productError,
+  } = useAppSelector((state) => state.product);
 
-  const { categories } = useAppSelector((state) => state.category);
+  const {
+    categories,
+    loading: categoryLoading,
+    error: categoryError,
+  } = useAppSelector((state) => state.category);
 
   const [showForm, setShowForm] = useState(false);
-
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // =========================
-  // GET PRODUCTS
+  // GET PRODUCTS + CATEGORIES
   // =========================
 
   useEffect(() => {
-    dispatch(getAllProductsThunk());
+    dispatch(
+      getAllProductsThunk({
+        search: "",
+        page: 1,
+        limit: 20,
+      }),
+    );
+
+    dispatch(
+      getAllCategoriesThunk({
+        search: "",
+        page: 1,
+        limit: 100,
+      }),
+    );
   }, [dispatch]);
 
   // =========================
@@ -73,10 +96,7 @@ const AdminProduct = () => {
     categoryId: number;
     detailsJson?: object;
   }) => {
-    // =========================
     // UPDATE
-    // =========================
-
     if (editingProduct) {
       const result = await dispatch(
         updateProductThunk({
@@ -90,6 +110,15 @@ const AdminProduct = () => {
 
         setShowForm(false);
         setEditingProduct(null);
+
+        // Refresh product list
+        dispatch(
+          getAllProductsThunk({
+            search: "",
+            page: 1,
+            limit: 20,
+          }),
+        );
       } else {
         toast.error(result.error.message ?? "Failed to update product");
       }
@@ -97,16 +126,23 @@ const AdminProduct = () => {
       return;
     }
 
-    // =========================
     // CREATE
-    // =========================
-
     const result = await dispatch(createProductThunk(data));
 
     if (createProductThunk.fulfilled.match(result)) {
       toast.success("Product created successfully");
 
       setShowForm(false);
+      setEditingProduct(null);
+
+      // Refresh product list
+      dispatch(
+        getAllProductsThunk({
+          search: "",
+          page: 1,
+          limit: 20,
+        }),
+      );
     } else {
       toast.error(result.error.message ?? "Failed to create product");
     }
@@ -121,52 +157,89 @@ const AdminProduct = () => {
 
     if (deleteProductThunk.fulfilled.match(result)) {
       toast.success("Product deleted successfully");
+
+      // Refresh product list
+      dispatch(
+        getAllProductsThunk({
+          search: "",
+          page: 1,
+          limit: 20,
+        }),
+      );
     } else {
       toast.error(result.error.message ?? "Failed to delete product");
     }
   };
 
   // =========================
+  // LOADING
+  // =========================
+
+  const loading = productLoading || categoryLoading;
+
+  // =========================
   // UI
   // =========================
 
   return (
-    <main>
-      <h1>Products</h1>
+    <main className="min-h-screen">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-black">Products</h1>
 
-      {/* Add Product Button */}
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your ShopVerse products.
+          </p>
+        </div>
 
-      {!showForm && (
-        <button type="button" onClick={handleAdd}>
-          Add Product
-        </button>
+        {!showForm && (
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+          >
+            Add Product
+          </button>
+        )}
+      </div>
+
+      {/* Errors */}
+      {productError && (
+        <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {productError}
+        </p>
+      )}
+
+      {categoryError && (
+        <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {categoryError}
+        </p>
       )}
 
       {/* Product Form */}
-
       {showForm && (
-        <ProductForm
-          categories={categories}
-          editingProduct={editingProduct}
-          loading={loading}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <ProductForm
+            categories={categories}
+            editingProduct={editingProduct}
+            loading={loading}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+          />
+        </div>
       )}
 
-      {/* Redux Error */}
-
-      {error && <p>{error}</p>}
-
       {/* Product Table */}
-
-      <ProductTable
-        products={products}
-        categories={categories}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <ProductTable
+          products={products}
+          // categories={categories}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
     </main>
   );
 };
