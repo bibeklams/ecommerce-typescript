@@ -8,7 +8,8 @@ export const createProduct = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, description, price, detailsJson, categoryId } = req.body;
+    const { name, description, price, detailsJson, categoryId, quantity } =
+      req.body;
 
     const files = req.files as {
       images?: Express.Multer.File[];
@@ -25,6 +26,7 @@ export const createProduct = async (
         price: Number(price),
         categoryId: Number(categoryId),
         detailsJson,
+        quantity: Number(quantity),
       },
       imageFiles,
       mediaFiles,
@@ -88,15 +90,29 @@ export const updateProduct = async (
   try {
     const id = Number(req.params.id);
 
-    const { name, description, price, detailsJson, categoryId } = req.body;
+    const { name, description, price, detailsJson, categoryId, quantity } =
+      req.body;
 
-    const result = await productService.updateProduct(id, {
-      name,
-      description,
-      price: price !== undefined ? Number(price) : undefined,
-      detailsJson,
-      categoryId: categoryId !== undefined ? Number(categoryId) : undefined,
-    });
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const imageFiles = files?.images ?? [];
+    const mediaFiles = files?.media ?? [];
+
+    const result = await productService.updateProduct(
+      id,
+      {
+        name,
+        description,
+        price: price !== undefined ? Number(price) : undefined,
+        detailsJson,
+        categoryId: categoryId !== undefined ? Number(categoryId) : undefined,
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
+      },
+      imageFiles,
+      mediaFiles,
+    );
 
     return res.status(200).json({
       success: true,
