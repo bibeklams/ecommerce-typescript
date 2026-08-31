@@ -56,21 +56,27 @@ model CategoryImage {
 }
 
 model Product {
-  id          Int        @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
-  slug        String     @unique
+  slug        String  @unique
   description String?
   price       Int
-  inventory   Inventory?
-  // Product → Category
-  categoryId  Int
-  category    Category   @relation(fields: [categoryId], references: [id])
+
+  // Product → Inventory (1-to-1)
+  inventory Inventory?
+
+  // Product → Category (many-to-1)
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
 
   detailsJson Json?
-  cartItems   CartItem[]
+
+  // Product → CartItem (1-to-many)
+  cartItems CartItem[]
+
   publishedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   // Product → Gallery (1-to-1)
@@ -78,9 +84,13 @@ model Product {
   gallery   Gallery? @relation(fields: [galleryId], references: [id])
 
   // Product → SEO (1-to-1)
-  seo          Seo?
-  orderItems   OrderItem[]
-  wishlistItem WishlistItem?
+  seo Seo?
+
+  // Product → OrderItem (1-to-many)
+  orderItems OrderItem[]
+
+  // Product → WishlistItem (1-to-many)
+  wishlistItems WishlistItem[]
 
   @@index([categoryId])
 }
