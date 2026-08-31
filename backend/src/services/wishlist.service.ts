@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
 import createError from "http-errors";
+import redis from "../config/redis.js";
 
 export const createWishlist = async (data: {
   userId: number;
@@ -36,9 +37,21 @@ export const createWishlist = async (data: {
     },
   });
 
+  await redis.del(`wishlist:${data.userId}`);
+  await redis.del(`wishlist:count:${data.userId}`);
+
   return wishlist;
 };
+
 export const getWishlist = async (userId: number) => {
+  const cacheKey = `wishlist:${userId}`;
+
+  const cache = await redis.get(cacheKey);
+
+  if (cache) {
+    return JSON.parse(cache);
+  }
+
   const wishlist = await prisma.wishlistItem.findMany({
     where: {
       user: {
@@ -53,6 +66,8 @@ export const getWishlist = async (userId: number) => {
       product: true,
     },
   });
+
+  await redis.set(cacheKey, JSON.stringify(wishlist), "EX", 600);
 
   return wishlist;
 };
@@ -82,16 +97,29 @@ export const removeWishlist = async (data: {
       },
     },
   });
+  await redis.del(`wishlist:${data.userId}`);
+
+  await redis.del(`wishlist:count:${data.userId}`);
 
   return removedWishlist;
 };
+
 export const countWishlist = async (userId: number) => {
-  const wishlist = await prisma.wishlistItem.count({
+  const cacheKey = `wishlist:count:${userId}`;
+
+  const cache = await redis.get(cacheKey);
+
+  if (cache !== null) {
+    return Number(cache);
+  }
+
+  const count = await prisma.wishlistItem.count({
     where: {
-      user: {
-        id: userId,
-      },
+      userId,
     },
   });
-  return wishlist;
+
+  await redis.set(cacheKey, count.toString(), "EX", 300);
+
+  return count;
 };

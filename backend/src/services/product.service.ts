@@ -338,7 +338,7 @@ export const countProducts = async () => {
     },
   });
 
-  await redis.set(cacheKey, count, "EX", 600);
+  await redis.set(cacheKey, count.toString(), "EX", 600);
 
   return count;
 };
