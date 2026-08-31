@@ -5,6 +5,7 @@ import { generateSlug } from "../utils/generateSlug.js";
 import * as galleryService from "./gallery.service.js";
 import * as galleryImageService from "./galleryImage.service.js";
 import * as mediaService from "./media.service.js";
+import * as inventoryService from "./inventory.service.js";
 
 export const createProduct = async (
   data: {
@@ -13,20 +14,26 @@ export const createProduct = async (
     description?: string;
     categoryId: number;
     detailsJson?: object;
+    quantity: number;
   },
   imageFiles: Express.Multer.File[] = [],
   mediaFiles: Express.Multer.File[] = [],
 ) => {
+  // 1. Generate slug
   const slug = generateSlug(data.name);
 
+  // 2. Check duplicate product
   const existingProduct = await prisma.product.findUnique({
-    where: { slug },
+    where: {
+      slug,
+    },
   });
 
   if (existingProduct) {
     throw createError(400, "Product already exists");
   }
 
+  // 3. Check category
   const category = await prisma.category.findFirst({
     where: {
       id: data.categoryId,
@@ -38,6 +45,7 @@ export const createProduct = async (
     throw createError(404, "Category not found");
   }
 
+  // 4. Create product
   const product = await prisma.product.create({
     data: {
       name: data.name,
@@ -49,24 +57,33 @@ export const createProduct = async (
     },
   });
 
+  // 5. Create inventory
+  await inventoryService.createInventory(product.id, data.quantity);
+
+  // 6. Create gallery
   const gallery = await galleryService.createGallery(product.id);
 
+  // 7. Upload images
   if (imageFiles.length > 0) {
     await galleryImageService.createGalleryImages(gallery.id, imageFiles);
   }
 
+  // 8. Upload media
   if (mediaFiles.length > 0) {
     await mediaService.createMedia(gallery.id, mediaFiles);
   }
 
+  // 9. Clear product count cache
   await redis.del("products:count");
 
+  // 10. Clear product list caches
   const productListKeys = await redis.keys("products:*");
 
   if (productListKeys.length > 0) {
     await redis.del(...productListKeys);
   }
 
+  // 11. Return created product
   return product;
 };
 
@@ -98,6 +115,7 @@ export const getAllProducts = async (
     include: {
       seo: true,
       category: true,
+      inventory: true,
       gallery: {
         include: {
           images: {
@@ -162,6 +180,7 @@ export const getSingleProduct = async (id: number) => {
     include: {
       seo: true,
       category: true,
+      inventory: true,
       gallery: {
         include: {
           images: {
@@ -196,8 +215,12 @@ export const updateProduct = async (
     price?: number;
     categoryId?: number;
     detailsJson?: object;
+    quantity?: number;
   },
+  imageFiles: Express.Multer.File[] = [],
+  mediaFiles: Express.Multer.File[] = [],
 ) => {
+  // 1. Find product
   const product = await prisma.product.findFirst({
     where: {
       id,
@@ -209,6 +232,7 @@ export const updateProduct = async (
     throw createError(404, "Product not found");
   }
 
+  // 2. Generate slug if name changed
   let slug: string | undefined;
 
   if (data.name && data.name !== product.name) {
@@ -220,6 +244,7 @@ export const updateProduct = async (
         id: {
           not: id,
         },
+        deletedAt: null,
       },
     });
 
@@ -228,6 +253,7 @@ export const updateProduct = async (
     }
   }
 
+  // 3. Check category
   if (data.categoryId !== undefined) {
     const category = await prisma.category.findFirst({
       where: {
@@ -241,17 +267,54 @@ export const updateProduct = async (
     }
   }
 
+  // 4. Update product
   const updatedProduct = await prisma.product.update({
-    where: { id },
+    where: {
+      id,
+    },
     data: {
-      ...data,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      categoryId: data.categoryId,
+      detailsJson: data.detailsJson,
       ...(slug && { slug }),
     },
   });
 
+  // 5. Update inventory if quantity is provided
+  if (data.quantity !== undefined) {
+    await inventoryService.updateInventory(id, data.quantity);
+  }
+
+  // 6. Find gallery
+  const gallery = await prisma.gallery.findFirst({
+    where: {
+      id: product.galleryId ?? undefined,
+    },
+  });
+
+  if (!gallery) {
+    throw createError(404, "Gallery not found");
+  }
+
+  // 7. Add new images
+  if (imageFiles.length > 0) {
+    await galleryImageService.createGalleryImages(gallery.id, imageFiles);
+  }
+
+  // 8. Add new media
+  if (mediaFiles.length > 0) {
+    await mediaService.createMedia(gallery.id, mediaFiles);
+  }
+
+  // 9. Clear product cache
   await redis.del(`product:${id}`);
+
+  // 10. Clear product count cache
   await redis.del("products:count");
 
+  // 11. Clear product list cache
   const productListKeys = await redis.keys("products:*");
 
   if (productListKeys.length > 0) {
@@ -260,7 +323,6 @@ export const updateProduct = async (
 
   return updatedProduct;
 };
-
 export const countProducts = async () => {
   const cacheKey = "products:count";
 

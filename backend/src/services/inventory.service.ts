@@ -24,13 +24,10 @@ export const createInventory = async (productId: number, quantity: number) => {
   return inventory;
 };
 
-export const updateInventory = async (
-  inventoryId: number,
-  quantity: number,
-) => {
+export const updateInventory = async (productId: number, quantity: number) => {
   const inventory = await prisma.inventory.findUnique({
     where: {
-      id: inventoryId,
+      productId,
     },
   });
 
@@ -40,7 +37,7 @@ export const updateInventory = async (
 
   const updatedInventory = await prisma.inventory.update({
     where: {
-      id: inventoryId,
+      productId,
     },
     data: {
       quantity,

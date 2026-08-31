@@ -77,14 +77,7 @@ export const updateGallery = async (galleryId: number, productId: number) => {
     throw createError(404, "Gallery not found");
   }
 
-  const updatedGallery = await prisma.gallery.update({
-    where: {
-      id: galleryId,
-    },
-    data: {},
-  });
-
-  return updatedGallery;
+  return gallery;
 };
 
 export const deleteGallery = async (galleryId: number, productId: number) => {
