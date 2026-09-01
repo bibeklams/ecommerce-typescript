@@ -18,7 +18,13 @@ export interface ProductGallery {
   images: ProductImage[];
   media: ProductMedia[];
 }
+export interface Inventory {
+  id: number;
+  productId: number;
+  quantity: number;
 
+  product: Product;
+}
 export interface Product {
   id: number;
   name: string;
@@ -27,7 +33,7 @@ export interface Product {
   price: number;
   categoryId: number;
   detailsJson?: Record<string, unknown>;
-
+  inventory: Inventory;
   category?: Category;
 
   gallery?: ProductGallery;
