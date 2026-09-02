@@ -4,25 +4,24 @@ import type { Product } from "../types/product";
 
 export const createProduct = async (data: {
   name: string;
-  slug: string;
   price: number;
   description?: string;
   categoryId: number;
   detailsJson?: object;
+  quantity: number;
   images?: File[];
   media?: File[];
 }) => {
   const formData = new FormData();
 
   formData.append("name", data.name);
-  formData.append("slug", data.slug);
   formData.append("price", String(data.price));
+  formData.append("categoryId", String(data.categoryId));
+  formData.append("quantity", String(data.quantity));
 
   if (data.description !== undefined) {
     formData.append("description", data.description);
   }
-
-  formData.append("categoryId", String(data.categoryId));
 
   if (data.detailsJson !== undefined) {
     formData.append("detailsJson", JSON.stringify(data.detailsJson));
@@ -41,10 +40,6 @@ export const createProduct = async (data: {
   return response.data.data;
 };
 
-// =========================
-// GET ALL PRODUCTS
-// =========================
-
 export const getAllProducts = async (search = "", page = 1, limit = 20) => {
   const response = await api.get("/products", {
     params: {
@@ -57,28 +52,20 @@ export const getAllProducts = async (search = "", page = 1, limit = 20) => {
   return response.data.data;
 };
 
-// =========================
-// GET SINGLE PRODUCT
-// =========================
-
 export const getSingleProduct = async (id: number): Promise<Product> => {
   const response = await api.get(`/products/${id}`);
 
   return response.data.data;
 };
 
-// =========================
-// UPDATE PRODUCT
-// =========================
-
 export const updateProduct = async (
   id: number,
   data: {
     name?: string;
-    slug?: string;
     description?: string;
     price?: number;
     detailsJson?: object;
+    quantity?: number;
     categoryId?: number;
     images?: File[];
     media?: File[];
@@ -88,10 +75,6 @@ export const updateProduct = async (
 
   if (data.name !== undefined) {
     formData.append("name", data.name);
-  }
-
-  if (data.slug !== undefined) {
-    formData.append("slug", data.slug);
   }
 
   if (data.description !== undefined) {
@@ -104,6 +87,10 @@ export const updateProduct = async (
 
   if (data.categoryId !== undefined) {
     formData.append("categoryId", String(data.categoryId));
+  }
+
+  if (data.quantity !== undefined) {
+    formData.append("quantity", String(data.quantity));
   }
 
   if (data.detailsJson !== undefined) {
@@ -122,7 +109,6 @@ export const updateProduct = async (
 
   return response.data.data;
 };
-
 // =========================
 // DELETE PRODUCT
 // =========================

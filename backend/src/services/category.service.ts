@@ -12,9 +12,10 @@ export const createCategory = async (
   file?: Express.Multer.File,
 ) => {
   // 1. Check duplicate category name
-  const existingCategory = await prisma.category.findUnique({
+  const existingCategory = await prisma.category.findFirst({
     where: {
       name: data.name,
+      deletedAt: null,
     },
   });
 
@@ -55,7 +56,17 @@ export const createCategory = async (
     await redis.del(...categoryListKeys);
   }
 
-  return category;
+  // 6. Get category again with image
+  const result = await prisma.category.findUnique({
+    where: {
+      id: category.id,
+    },
+    include: {
+      categoryImage: true,
+    },
+  });
+
+  return result;
 };
 
 export const getAllCategories = async (
@@ -194,16 +205,18 @@ export const updateCategory = async (
   }
 
   // 2. Check duplicate name
-  if (data.name && data.name !== category.name) {
-    const existingCategory = await prisma.category.findUnique({
-      where: {
-        name: data.name,
+  const existingCategory = await prisma.category.findFirst({
+    where: {
+      name: data.name,
+      deletedAt: null,
+      id: {
+        not: id,
       },
-    });
+    },
+  });
 
-    if (existingCategory) {
-      throw createError(400, "Category already exists");
-    }
+  if (existingCategory) {
+    throw createError(400, "Category already exists");
   }
 
   // 3. Check parent category

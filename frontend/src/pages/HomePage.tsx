@@ -65,13 +65,13 @@ const HomePage = () => {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="border-b border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-7xl px-6 py-16 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-black md:text-5xl">
+      <section className="bg-gray-50">
+        <div className="mx-auto max-w-7xl px-6 py-20 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-gray-900 md:text-5xl">
             ShopVerse
           </h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+          <p className="mx-auto mt-4 max-w-2xl text-gray-500">
             Find the products you need from our collection.
           </p>
 
@@ -83,11 +83,11 @@ const HomePage = () => {
       </section>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="mx-auto max-w-7xl px-6 py-14">
         {/* Categories */}
         <section>
-          <div className="mb-5">
-            <h2 className="text-2xl font-bold text-black">Categories</h2>
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">Categories</h2>
 
             <p className="mt-1 text-sm text-gray-500">
               Browse products by category
@@ -95,9 +95,16 @@ const HomePage = () => {
           </div>
 
           {categoryLoading ? (
-            <p className="text-gray-500">Loading categories...</p>
+            <div className="flex gap-3">
+              {[...Array(6)].map((_, index) => (
+                <div
+                  key={index}
+                  className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-gray-100"
+                />
+              ))}
+            </div>
           ) : categoryError ? (
-            <p className="text-red-600">{categoryError}</p>
+            <p className="text-sm text-red-500">{categoryError}</p>
           ) : (
             <CategoryList
               categories={categories}
@@ -107,9 +114,9 @@ const HomePage = () => {
         </section>
 
         {/* Products */}
-        <section className="mt-12">
-          <div className="mb-5">
-            <h2 className="text-2xl font-bold text-black">Products</h2>
+        <section className="mt-16">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">Products</h2>
 
             <p className="mt-1 text-sm text-gray-500">
               Explore our latest products
@@ -117,8 +124,8 @@ const HomePage = () => {
           </div>
 
           {productError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-600">{productError}</p>
+            <div className="rounded-2xl bg-red-50 p-4">
+              <p className="text-sm text-red-500">{productError}</p>
             </div>
           ) : (
             <ProductList products={products} loading={productLoading} />

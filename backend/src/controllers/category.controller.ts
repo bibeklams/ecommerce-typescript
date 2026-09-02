@@ -9,7 +9,6 @@ export const createCategory = async (
 ) => {
   try {
     const { name, description, parentId } = req.body;
-
     const result = await categoryService.createCategory(
       {
         name,

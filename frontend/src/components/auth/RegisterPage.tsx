@@ -54,69 +54,114 @@ const RegisterPage = () => {
   };
 
   return (
-    <main>
-      <Formik
-        initialValues={{
-          name: "",
-          email: "",
-          password: "",
-        }}
-        validationSchema={registerSchema}
-        onSubmit={handleSubmit}
-      >
-        {({ isSubmitting }) => (
-          <Form>
-            {/* Name */}
-            <div>
-              <label htmlFor="name">Name</label>
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg p-6">
+        <h1 className="text-xl font-semibold text-gray-800 mb-1">
+          Create an account
+        </h1>
+        <p className="text-sm text-gray-500 mb-6">Sign up to get started</p>
 
-              <Field
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter your name"
-              />
+        <Formik
+          initialValues={{
+            name: "",
+            email: "",
+            password: "",
+          }}
+          validationSchema={registerSchema}
+          onSubmit={handleSubmit}
+        >
+          {({ isSubmitting }) => (
+            <Form className="space-y-4">
+              {/* Name */}
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Name
+                </label>
 
-              <ErrorMessage name="name" component="p" />
-            </div>
+                <Field
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                />
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email">Email</label>
+                <ErrorMessage
+                  name="name"
+                  component="p"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
 
-              <Field
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-              />
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Email
+                </label>
 
-              <ErrorMessage name="email" component="p" />
-            </div>
+                <Field
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                />
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password">Password</label>
+                <ErrorMessage
+                  name="email"
+                  component="p"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
 
-              <Field
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-              />
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Password
+                </label>
 
-              <ErrorMessage name="password" component="p" />
-            </div>
+                <Field
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                />
 
-            {/* Backend / Redux error */}
-            {error && <p>{error}</p>}
+                <ErrorMessage
+                  name="password"
+                  component="p"
+                  className="text-red-500 text-xs mt-1"
+                />
+              </div>
 
-            <button type="submit" disabled={loading || isSubmitting}>
-              {loading ? "Registering..." : "Register"}
-            </button>
-          </Form>
-        )}
-      </Formik>
+              {/* Backend / Redux error */}
+              {error && (
+                <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || isSubmitting}
+                className="w-full bg-gray-900 text-white text-sm font-medium py-2 rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? "Registering..." : "Register"}
+              </button>
+            </Form>
+          )}
+        </Formik>
+      </div>
     </main>
   );
 };

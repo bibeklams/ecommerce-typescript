@@ -24,6 +24,7 @@ export const createProduct = z.object({
   detailsJson: detailsJsonSchema,
 
   categoryId: z.coerce.number().int().positive(),
+  quantity: z.coerce.number().int().positive(),
 });
 
 export const updateProduct = z.object({
@@ -42,4 +43,6 @@ export const updateProduct = z.object({
   detailsJson: detailsJsonSchema,
 
   categoryId: z.coerce.number().int().positive().optional(),
+
+  quantity: z.coerce.number().int().positive().optional(),
 });

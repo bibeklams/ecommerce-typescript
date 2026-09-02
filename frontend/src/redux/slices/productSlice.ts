@@ -29,10 +29,6 @@ export type GetProductsResponse = {
   totalPages: number;
 };
 
-// =========================
-// STATE
-// =========================
-
 interface ProductState {
   products: Product[];
   product: Product | null;
@@ -74,6 +70,7 @@ export type CreateProductData = {
   description?: string;
   price: number;
   categoryId: number;
+  quantity: number;
   detailsJson?: object;
   images?: File[];
   media?: File[];
@@ -89,6 +86,7 @@ export type UpdateProductData = {
   description?: string;
   price?: number;
   categoryId?: number;
+  quantity?: number;
   detailsJson?: object;
   images?: File[];
   media?: File[];

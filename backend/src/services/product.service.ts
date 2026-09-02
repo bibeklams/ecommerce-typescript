@@ -96,14 +96,14 @@ export const getAllProducts = async (
 
   const cacheKey = `products:search:${search}:page:${page}:limit:${limit}`;
 
-  // Check Redis
+  // 1. Check Redis cache
   const cache = await redis.get(cacheKey);
 
   if (cache) {
     return JSON.parse(cache);
   }
 
-  // Get products
+  // 2. Get products
   const products = await prisma.product.findMany({
     where: {
       deletedAt: null,
@@ -112,10 +112,11 @@ export const getAllProducts = async (
         mode: "insensitive",
       },
     },
+
     include: {
-      seo: true,
       category: true,
       inventory: true,
+
       gallery: {
         include: {
           images: {
@@ -123,6 +124,7 @@ export const getAllProducts = async (
               createdAt: "asc",
             },
           },
+
           media: {
             orderBy: {
               createdAt: "asc",
@@ -130,16 +132,19 @@ export const getAllProducts = async (
           },
         },
       },
+
+      seo: true,
     },
+
     orderBy: {
       createdAt: "asc",
     },
+
     skip,
     take: limit,
   });
 
-  // DO NOT throw 404 when products.length === 0
-
+  // 3. Count total products
   const total = await prisma.product.count({
     where: {
       deletedAt: null,
@@ -150,6 +155,7 @@ export const getAllProducts = async (
     },
   });
 
+  // 4. Create response
   const result = {
     products,
     total,
@@ -158,6 +164,7 @@ export const getAllProducts = async (
     totalPages: Math.ceil(total / limit),
   };
 
+  // 5. Store in Redis
   await redis.set(cacheKey, JSON.stringify(result), "EX", 600);
 
   return result;
@@ -273,17 +280,25 @@ export const updateProduct = async (
       id,
     },
     data: {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      categoryId: data.categoryId,
-      detailsJson: data.detailsJson,
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.description !== undefined && {
+        description: data.description,
+      }),
+      ...(data.price !== undefined && {
+        price: data.price,
+      }),
+      ...(data.categoryId !== undefined && {
+        categoryId: data.categoryId,
+      }),
+      ...(data.detailsJson !== undefined && {
+        detailsJson: data.detailsJson,
+      }),
       ...(slug && { slug }),
     },
   });
 
-  // 5. Update inventory if quantity is provided
   if (data.quantity !== undefined) {
+    console.log("🔥 Calling updateInventory");
     await inventoryService.updateInventory(id, data.quantity);
   }
 
@@ -308,13 +323,13 @@ export const updateProduct = async (
     await mediaService.createMedia(gallery.id, mediaFiles);
   }
 
-  // 9. Clear product cache
+  // 9. Clear single product cache
   await redis.del(`product:${id}`);
 
   // 10. Clear product count cache
   await redis.del("products:count");
 
-  // 11. Clear product list cache
+  // 11. Clear product list caches
   const productListKeys = await redis.keys("products:*");
 
   if (productListKeys.length > 0) {

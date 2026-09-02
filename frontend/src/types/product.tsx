@@ -1,4 +1,5 @@
 import type { Category } from "./category";
+import type { CartItem } from "./cartItem";
 
 export interface ProductImage {
   id: number;
@@ -18,13 +19,14 @@ export interface ProductGallery {
   images: ProductImage[];
   media: ProductMedia[];
 }
+
 export interface Inventory {
   id: number;
   productId: number;
   quantity: number;
-
-  product: Product;
+  product?: Product;
 }
+
 export interface Product {
   id: number;
   name: string;
@@ -33,8 +35,8 @@ export interface Product {
   price: number;
   categoryId: number;
   detailsJson?: Record<string, unknown>;
-  inventory: Inventory;
+  inventory?: Inventory;
   category?: Category;
-
+  cartItems?: CartItem[];
   gallery?: ProductGallery;
 }

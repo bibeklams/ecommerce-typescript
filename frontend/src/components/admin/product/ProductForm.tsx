@@ -9,6 +9,7 @@ type ProductFormData = {
   slug: string;
   description: string;
   price: string;
+  quantity: string;
   categoryId: string;
   detailsJson: string;
   images: File[];
@@ -19,16 +20,19 @@ interface ProductFormProps {
   categories: Category[];
   editingProduct: Product | null;
   loading: boolean;
+
   onSubmit: (data: {
     name: string;
     slug: string;
     description?: string;
     price: number;
+    quantity: number;
     categoryId: number;
     detailsJson?: object;
     images?: File[];
     media?: File[];
   }) => void;
+
   onCancel: () => void;
 }
 
@@ -46,6 +50,11 @@ const productSchema = Yup.object({
   price: Yup.number()
     .positive("Price must be greater than 0")
     .required("Price is required"),
+
+  quantity: Yup.number()
+    .integer("Quantity must be a whole number")
+    .positive("Quantity must be greater than 0")
+    .required("Quantity is required"),
 
   categoryId: Yup.string().required("Category is required"),
 
@@ -74,16 +83,30 @@ const ProductForm = ({
 }: ProductFormProps) => {
   const initialValues: ProductFormData = {
     name: editingProduct?.name ?? "",
+
     slug: editingProduct?.slug ?? "",
+
     description: editingProduct?.description ?? "",
-    price: editingProduct?.price ? String(editingProduct.price) : "",
-    categoryId: editingProduct?.categoryId
-      ? String(editingProduct.categoryId)
-      : "",
+
+    price:
+      editingProduct?.price !== undefined ? String(editingProduct.price) : "",
+
+    quantity:
+      editingProduct?.inventory?.quantity !== undefined
+        ? String(editingProduct.inventory.quantity)
+        : "",
+
+    categoryId:
+      editingProduct?.categoryId !== undefined
+        ? String(editingProduct.categoryId)
+        : "",
+
     detailsJson: editingProduct?.detailsJson
       ? JSON.stringify(editingProduct.detailsJson, null, 2)
       : "",
+
     images: [],
+
     media: [],
   };
 
@@ -103,6 +126,7 @@ const ProductForm = ({
       slug: values.slug,
       description: values.description || undefined,
       price: Number(values.price),
+      quantity: Number(values.quantity),
       categoryId: Number(values.categoryId),
       detailsJson,
       images: values.images.length > 0 ? values.images : undefined,
@@ -111,10 +135,10 @@ const ProductForm = ({
   };
 
   return (
-    <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      {/* Header */}
-      <div className="mb-6 border-b border-gray-200 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900">
+    <section className="mb-8 rounded-2xl bg-white p-8 shadow-sm">
+      {/* HEADER */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-900">
           {editingProduct ? "Edit Product" : "Add Product"}
         </h2>
 
@@ -137,7 +161,7 @@ const ProductForm = ({
             <div>
               <label
                 htmlFor="name"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Product Name
               </label>
@@ -147,13 +171,13 @@ const ProductForm = ({
                 name="name"
                 type="text"
                 placeholder="Enter product name"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
               />
 
               <ErrorMessage
                 name="name"
                 component="p"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1.5 text-xs text-red-500"
               />
             </div>
 
@@ -161,7 +185,7 @@ const ProductForm = ({
             <div>
               <label
                 htmlFor="slug"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Slug
               </label>
@@ -171,13 +195,13 @@ const ProductForm = ({
                 name="slug"
                 type="text"
                 placeholder="example-product-name"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
               />
 
               <ErrorMessage
                 name="slug"
                 component="p"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1.5 text-xs text-red-500"
               />
             </div>
 
@@ -185,7 +209,7 @@ const ProductForm = ({
             <div>
               <label
                 htmlFor="description"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Description
               </label>
@@ -196,23 +220,23 @@ const ProductForm = ({
                 name="description"
                 rows={4}
                 placeholder="Enter product description"
-                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                className="w-full resize-none rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
               />
 
               <ErrorMessage
                 name="description"
                 component="p"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1.5 text-xs text-red-500"
               />
             </div>
 
-            {/* PRICE + CATEGORY */}
+            {/* PRICE + QUANTITY */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* PRICE */}
               <div>
                 <label
                   htmlFor="price"
-                  className="mb-2 block text-sm font-medium text-gray-800"
+                  className="mb-2 block text-sm font-medium text-gray-700"
                 >
                   Price
                 </label>
@@ -221,54 +245,80 @@ const ProductForm = ({
                   id="price"
                   name="price"
                   type="number"
+                  min="1"
                   placeholder="Enter price"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                  className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
                 />
 
                 <ErrorMessage
                   name="price"
                   component="p"
-                  className="mt-1 text-sm text-red-600"
+                  className="mt-1.5 text-xs text-red-500"
                 />
               </div>
 
-              {/* CATEGORY */}
+              {/* QUANTITY */}
               <div>
                 <label
-                  htmlFor="categoryId"
-                  className="mb-2 block text-sm font-medium text-gray-800"
+                  htmlFor="quantity"
+                  className="mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Category
+                  Quantity
                 </label>
 
                 <Field
-                  as="select"
-                  id="categoryId"
-                  name="categoryId"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-                >
-                  <option value="">Select Category</option>
-
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </Field>
+                  id="quantity"
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  placeholder="Enter quantity"
+                  className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
+                />
 
                 <ErrorMessage
-                  name="categoryId"
+                  name="quantity"
                   component="p"
-                  className="mt-1 text-sm text-red-600"
+                  className="mt-1.5 text-xs text-red-500"
                 />
               </div>
+            </div>
+
+            {/* CATEGORY */}
+            <div>
+              <label
+                htmlFor="categoryId"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Category
+              </label>
+
+              <Field
+                as="select"
+                id="categoryId"
+                name="categoryId"
+                className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
+              >
+                <option value="">Select Category</option>
+
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Field>
+
+              <ErrorMessage
+                name="categoryId"
+                component="p"
+                className="mt-1.5 text-xs text-red-500"
+              />
             </div>
 
             {/* DETAILS JSON */}
             <div>
               <label
                 htmlFor="detailsJson"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Product Details
               </label>
@@ -283,16 +333,16 @@ const ProductForm = ({
   "size": "XL",
   "material": "cotton"
 }`}
-                className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 font-mono text-sm outline-none transition focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                className="w-full resize-y rounded-xl bg-gray-50 px-4 py-3 font-mono text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
               />
 
               <ErrorMessage
                 name="detailsJson"
                 component="p"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1.5 text-xs text-red-500"
               />
 
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1.5 text-xs text-gray-400">
                 Enter valid JSON for additional product information.
               </p>
             </div>
@@ -301,7 +351,7 @@ const ProductForm = ({
             <div>
               <label
                 htmlFor="images"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Product Images
               </label>
@@ -317,10 +367,10 @@ const ProductForm = ({
 
                   setFieldValue("images", files);
                 }}
-                className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 file:mr-4 file:border-0 file:bg-black file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
+                className="block w-full cursor-pointer rounded-xl bg-gray-50 text-sm text-gray-600 file:mr-4 file:rounded-full file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
               />
 
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1.5 text-xs text-gray-400">
                 Select one or more product images.
               </p>
             </div>
@@ -329,10 +379,10 @@ const ProductForm = ({
             <div>
               <label
                 htmlFor="media"
-                className="mb-2 block text-sm font-medium text-gray-800"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 Product Media
-                <span className="ml-2 font-normal text-gray-500">
+                <span className="ml-2 font-normal text-gray-400">
                   (Optional)
                 </span>
               </label>
@@ -348,20 +398,20 @@ const ProductForm = ({
 
                   setFieldValue("media", files);
                 }}
-                className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 file:mr-4 file:border-0 file:bg-black file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
+                className="block w-full cursor-pointer rounded-xl bg-gray-50 text-sm text-gray-600 file:mr-4 file:rounded-full file:border-0 file:bg-gray-900 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
               />
 
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1.5 text-xs text-gray-400">
                 Optional product videos or other media.
               </p>
             </div>
 
             {/* BUTTONS */}
-            <div className="flex items-center gap-3 border-t border-gray-200 pt-6">
+            <div className="flex items-center gap-3 pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-gray-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading
                   ? "Saving..."
@@ -374,7 +424,7 @@ const ProductForm = ({
                 type="button"
                 onClick={onCancel}
                 disabled={loading}
-                className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full px-6 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>

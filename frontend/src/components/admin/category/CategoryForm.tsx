@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import toast from "react-hot-toast";
 
 import type { Category } from "../../../types/category";
 
@@ -15,12 +16,14 @@ interface CategoryFormProps {
   categories: Category[];
   editingCategory: Category | null;
   loading: boolean;
+
   onSubmit: (data: {
     name: string;
     description?: string;
     parentId?: number;
-    image?: File;
+    categoryImage?: File;
   }) => void;
+
   onCancel: () => void;
 }
 
@@ -43,7 +46,6 @@ const categorySchema = Yup.object({
     })
     .test("fileType", "Only JPG, JPEG, PNG and WEBP are allowed", (file) => {
       if (!file) return true;
-
       return ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
         file.type,
       );
@@ -63,15 +65,12 @@ const CategoryForm = ({
 
   const initialValues: CategoryFormData = {
     name: editingCategory?.name ?? "",
-
     description: editingCategory?.description ?? "",
-
     parentId:
       editingCategory?.parentId !== undefined &&
       editingCategory?.parentId !== null
         ? String(editingCategory.parentId)
         : "",
-
     image: null,
   };
 
@@ -80,18 +79,27 @@ const CategoryForm = ({
       name: values.name,
       description: values.description || undefined,
       parentId: values.parentId ? Number(values.parentId) : undefined,
-      image: values.image ?? undefined,
+
+      // IMPORTANT:
+      // Formik uses "image",
+      // API expects "categoryImage"
+      categoryImage: values.image ?? undefined,
     });
+
+    toast.success(
+      editingCategory
+        ? "Category updated successfully"
+        : "Category added successfully",
+    );
   };
 
   return (
-    <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <section className="mb-8 rounded-2xl bg-white p-8 shadow-sm">
       {/* Header */}
-      <div className="mb-6 border-b border-gray-200 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-900">
           {editingCategory ? "Edit Category" : "Add Category"}
         </h2>
-
         <p className="mt-1 text-sm text-gray-500">
           {editingCategory
             ? "Update the category information below."
@@ -105,183 +113,176 @@ const CategoryForm = ({
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ setFieldValue, values }) => (
-          <Form className="space-y-6">
-            {/* NAME */}
-            <div>
-              <label
-                htmlFor="name"
-                className="mb-2 block text-sm font-medium text-gray-800"
-              >
-                Category Name
-              </label>
+        {({ setFieldValue, values, validateForm, submitForm }) => {
+          const handleAttemptSubmit = async () => {
+            const errors = await validateForm();
+            const errorMessages = Object.values(errors).filter(
+              Boolean,
+            ) as string[];
 
-              <Field
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter category name"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-              />
+            if (errorMessages.length > 0) {
+              errorMessages.forEach((message) => toast.error(message));
+              return;
+            }
 
-              <ErrorMessage
-                name="name"
-                component="p"
-                className="mt-1 text-sm text-red-600"
-              />
-            </div>
+            submitForm();
+          };
 
-            {/* DESCRIPTION */}
-            <div>
-              <label
-                htmlFor="description"
-                className="mb-2 block text-sm font-medium text-gray-800"
-              >
-                Description
-              </label>
+          return (
+            <Form className="space-y-6">
+              {/* NAME */}
+              <div>
+                <label
+                  htmlFor="name"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Category Name
+                </label>
 
-              <Field
-                as="textarea"
-                id="description"
-                name="description"
-                rows={4}
-                placeholder="Enter category description"
-                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-              />
+                <Field
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Enter category name"
+                  className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
+                />
+              </div>
 
-              <ErrorMessage
-                name="description"
-                component="p"
-                className="mt-1 text-sm text-red-600"
-              />
-            </div>
+              {/* DESCRIPTION */}
+              <div>
+                <label
+                  htmlFor="description"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Description
+                </label>
 
-            {/* PARENT CATEGORY */}
-            <div>
-              <label
-                htmlFor="parentId"
-                className="mb-2 block text-sm font-medium text-gray-800"
-              >
-                Parent Category
-              </label>
+                <Field
+                  as="textarea"
+                  id="description"
+                  name="description"
+                  rows={4}
+                  placeholder="Enter category description"
+                  className="w-full resize-none rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
+                />
+              </div>
 
-              <Field
-                as="select"
-                id="parentId"
-                name="parentId"
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-1 focus:ring-black"
-              >
-                <option value="">No Parent</option>
+              {/* PARENT CATEGORY */}
+              <div>
+                <label
+                  htmlFor="parentId"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Parent Category
+                </label>
 
-                {categories
-                  .filter((category) => category.id !== editingCategory?.id)
-                  .map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-              </Field>
+                <Field
+                  as="select"
+                  id="parentId"
+                  name="parentId"
+                  className="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-gray-900"
+                >
+                  <option value="">No Parent</option>
 
-              <ErrorMessage
-                name="parentId"
-                component="p"
-                className="mt-1 text-sm text-red-600"
-              />
+                  {categories
+                    .filter((category) => category.id !== editingCategory?.id)
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                </Field>
 
-              <p className="mt-1 text-xs text-gray-500">
-                Select a parent if this is a sub-category.
-              </p>
-            </div>
-
-            {/* CATEGORY IMAGE */}
-            <div>
-              <label
-                htmlFor="image"
-                className="mb-2 block text-sm font-medium text-gray-800"
-              >
-                Category Image
-              </label>
-
-              <input
-                id="image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0] ?? null;
-
-                  setFieldValue("image", file);
-
-                  if (file) {
-                    const previewUrl = URL.createObjectURL(file);
-
-                    setImagePreview(previewUrl);
-                  } else {
-                    setImagePreview(
-                      editingCategory?.categoryImage?.url ?? null,
-                    );
-                  }
-                }}
-                className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 file:mr-4 file:border-0 file:bg-black file:px-4 file:py-3 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
-              />
-
-              <ErrorMessage
-                name="image"
-                component="p"
-                className="mt-1 text-sm text-red-600"
-              />
-
-              {/* IMAGE PREVIEW */}
-              {imagePreview && (
-                <div className="mt-4">
-                  <p className="mb-2 text-sm font-medium text-gray-700">
-                    Image Preview
-                  </p>
-
-                  <img
-                    src={imagePreview}
-                    alt="Category preview"
-                    className="h-36 w-36 rounded-lg border border-gray-200 object-cover shadow-sm"
-                  />
-                </div>
-              )}
-
-              {/* SELECTED FILE */}
-              {values.image && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Selected:{" "}
-                  <span className="font-medium text-gray-700">
-                    {values.image.name}
-                  </span>
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Select a parent if this is a sub-category.
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* BUTTONS */}
-            <div className="flex items-center gap-3 border-t border-gray-200 pt-6">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading
-                  ? "Saving..."
-                  : editingCategory
-                    ? "Update Category"
-                    : "Add Category"}
-              </button>
+              {/* CATEGORY IMAGE */}
+              <div>
+                <label
+                  htmlFor="image"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  Category Image
+                </label>
 
-              <button
-                type="button"
-                onClick={onCancel}
-                disabled={loading}
-                className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </Form>
-        )}
+                <div className="flex items-center gap-4">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Category preview"
+                      className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-xs text-gray-400">
+                      No image
+                    </div>
+                  )}
+
+                  <label
+                    htmlFor="image"
+                    className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                  >
+                    {values.image ? "Change image" : "Upload image"}
+                  </label>
+
+                  <input
+                    id="image"
+                    name="image"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0] ?? null;
+
+                      setFieldValue("image", file);
+
+                      if (file) {
+                        setImagePreview(URL.createObjectURL(file));
+                      } else {
+                        setImagePreview(
+                          editingCategory?.categoryImage?.url ?? null,
+                        );
+                      }
+                    }}
+                  />
+
+                  {values.image && (
+                    <span className="truncate text-xs text-gray-400">
+                      {values.image.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* BUTTONS */}
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleAttemptSubmit}
+                  disabled={loading}
+                  className="rounded-full bg-gray-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading
+                    ? "Saving..."
+                    : editingCategory
+                      ? "Update Category"
+                      : "Add Category"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  disabled={loading}
+                  className="rounded-full px-6 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </Form>
+          );
+        }}
       </Formik>
     </section>
   );

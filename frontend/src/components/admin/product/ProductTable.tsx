@@ -1,5 +1,4 @@
 import type { Product } from "../../../types/product";
-
 interface ProductTableProps {
   products: Product[];
   loading: boolean;
@@ -33,7 +32,7 @@ const ProductTable = ({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1000px] text-left text-sm">
             {/* Table Header */}
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
@@ -46,6 +45,10 @@ const ProductTable = ({
                 <th className="px-5 py-4 font-semibold text-gray-700">Slug</th>
 
                 <th className="px-5 py-4 font-semibold text-gray-700">Price</th>
+
+                <th className="px-5 py-4 font-semibold text-gray-700">
+                  Quantity
+                </th>
 
                 <th className="px-5 py-4 font-semibold text-gray-700">
                   Category
@@ -93,6 +96,13 @@ const ProductTable = ({
                   {/* PRICE */}
                   <td className="px-5 py-4 font-medium text-gray-900">
                     ${product.price}
+                  </td>
+
+                  {/* QUANTITY */}
+                  <td className="px-5 py-4">
+                    <span className="font-medium text-gray-900">
+                      {product.inventory?.quantity ?? 0}
+                    </span>
                   </td>
 
                   {/* CATEGORY */}
