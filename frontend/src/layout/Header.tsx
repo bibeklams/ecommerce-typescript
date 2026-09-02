@@ -1,15 +1,19 @@
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
+import { FaHeart } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { logout } from "../redux/slices/authSlice";
-
+import { useEffect } from "react";
+import { countWishlistThunk } from "../redux/slices/wishlistSlice";
 const Header = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const { user, loading } = useAppSelector((state) => state.auth);
-
+  const { count } = useAppSelector((state) => state.wishlist);
+  useEffect(() => {
+    dispatch(countWishlistThunk());
+  }, [dispatch]);
   const handleLogout = async () => {
     const result = await dispatch(logout());
 
@@ -47,6 +51,24 @@ const Header = () => {
             className="group relative py-5 text-sm font-medium text-gray-700 transition hover:text-black"
           >
             Search
+            <span className="absolute bottom-2 left-0 h-[2px] w-0 bg-black transition-all duration-200 group-hover:w-full" />
+          </Link>
+          <Link
+            to="/wishlist"
+            className="group relative flex items-center gap-2 py-5 text-sm font-medium text-gray-700 transition hover:text-black"
+          >
+            <span className="relative">
+              <FaHeart className="text-lg" />
+
+              {count > 0 && (
+                <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {count}
+                </span>
+              )}
+            </span>
+
+            <span>Wishlist</span>
+
             <span className="absolute bottom-2 left-0 h-[2px] w-0 bg-black transition-all duration-200 group-hover:w-full" />
           </Link>
         </div>

@@ -71,6 +71,7 @@ const wishlistSlice = createSlice({
     builder.addCase(addToWishlist.fulfilled, (state, action) => {
       state.loading = false;
       state.items.push(action.payload);
+      state.count += 1;
       state.error = null;
     });
     builder.addCase(addToWishlist.rejected, (state, action) => {
@@ -101,7 +102,7 @@ const wishlistSlice = createSlice({
       state.items = state.items.filter(
         (item) => item.productId !== action.payload.productId,
       );
-
+      state.count -= 1;
       state.error = null;
     });
     builder.addCase(removeWishlistThunk.rejected, (state, action) => {

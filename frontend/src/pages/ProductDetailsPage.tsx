@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
-
 import { useParams } from "react-router-dom";
-
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-
 import { getSingleProductThunk } from "../redux/slices/productSlice";
+import {
+  addToWishlist,
+  removeWishlistThunk,
+  getWishlistThunk,
+} from "../redux/slices/wishlistSlice";
+import { FaHeart } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const ProductDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-
   const dispatch = useAppDispatch();
-
   const { product, loading, error } = useAppSelector((state) => state.product);
 
+  const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+
+  const isWishlisted = product
+    ? wishlistItems.some((item) => item.productId === product.id)
+    : false;
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -20,6 +27,10 @@ const ProductDetailsPage = () => {
 
     dispatch(getSingleProductThunk(Number(id)));
   }, [id, dispatch]);
+
+  useEffect(() => {
+    dispatch(getWishlistThunk());
+  }, [dispatch]);
 
   if (loading) {
     return (
@@ -44,7 +55,6 @@ const ProductDetailsPage = () => {
       </main>
     );
   }
-
   const stock = product.inventory?.quantity ?? 0;
 
   const decreaseQuantity = () => {
@@ -68,6 +78,21 @@ const ProductDetailsPage = () => {
     // }));
   };
 
+  const handleWishlistToggle = async () => {
+    try {
+      if (isWishlisted) {
+        await dispatch(removeWishlistThunk(product.id)).unwrap();
+
+        toast.success("Removed from wishlist");
+      } else {
+        await dispatch(addToWishlist(product.id)).unwrap();
+
+        toast.success("Added to wishlist");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    }
+  };
   return (
     <main className="min-h-screen bg-white px-4 py-8 md:px-8">
       <div className="mx-auto max-w-6xl">
@@ -191,6 +216,19 @@ const ProductDetailsPage = () => {
                 className="mt-5 w-full rounded-md bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
               >
                 {stock > 0 ? "Add to Cart" : "Out of Stock"}
+              </button>
+              <button
+                type="button"
+                onClick={handleWishlistToggle}
+                className={`mt-2 flex w-full items-center justify-center gap-2 rounded-md border px-5 py-3 text-sm font-semibold transition ${
+                  isWishlisted
+                    ? "border-red-500 bg-red-500 text-white hover:bg-red-600"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <FaHeart />
+
+                {isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
               </button>
             </div>
           </section>

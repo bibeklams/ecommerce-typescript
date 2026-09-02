@@ -103,7 +103,15 @@ export const getWishlist = async (data: {
     },
 
     include: {
-      product: true,
+      product: {
+        include: {
+          gallery: {
+            include: {
+              images: true,
+            },
+          },
+        },
+      },
     },
 
     orderBy: {

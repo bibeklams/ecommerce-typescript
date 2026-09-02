@@ -8,7 +8,7 @@ import HomePage from "../pages/HomePage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
-
+import WishListPage from "../pages/wishlist/wishlistPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
@@ -26,7 +26,7 @@ const AppRoutes = () => {
         <Route path="/home" element={<HomePage />} />
 
         <Route path="/products/:id" element={<ProductDetailsPage />} />
-
+        <Route path="/wishlist" element={<WishListPage />} />
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/register" element={<RegisterPage />} />

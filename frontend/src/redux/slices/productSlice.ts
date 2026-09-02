@@ -11,10 +11,6 @@ import {
   countProducts,
 } from "../../services/product.service";
 
-// =========================
-// TYPES
-// =========================
-
 export type GetProductsParams = {
   search?: string;
   page?: number;
@@ -43,10 +39,6 @@ interface ProductState {
   error: string | null;
 }
 
-// =========================
-// INITIAL STATE
-// =========================
-
 const initialState: ProductState = {
   products: [],
   product: null,
@@ -60,10 +52,6 @@ const initialState: ProductState = {
   error: null,
 };
 
-// =========================
-// CREATE PRODUCT DATA
-// =========================
-
 export type CreateProductData = {
   name: string;
   slug: string;
@@ -75,10 +63,6 @@ export type CreateProductData = {
   images?: File[];
   media?: File[];
 };
-
-// =========================
-// UPDATE PRODUCT DATA
-// =========================
 
 export type UpdateProductData = {
   name?: string;
@@ -92,10 +76,6 @@ export type UpdateProductData = {
   media?: File[];
 };
 
-// =========================
-// CREATE PRODUCT
-// =========================
-
 export const createProductThunk = createAsyncThunk<Product, CreateProductData>(
   "product/createProduct",
 
@@ -105,10 +85,6 @@ export const createProductThunk = createAsyncThunk<Product, CreateProductData>(
     return response;
   },
 );
-
-// =========================
-// GET ALL PRODUCTS
-// =========================
 
 export const getAllProductsThunk = createAsyncThunk<
   GetProductsResponse,
