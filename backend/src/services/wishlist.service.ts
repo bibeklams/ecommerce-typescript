@@ -3,9 +3,20 @@ import createError from "http-errors";
 import redis from "../config/redis.js";
 
 export const createWishlist = async (data: {
-  userId: number;
+  userId?: number;
+  guestId?: string;
   productId: number;
 }) => {
+  // Exactly one identity must be provided
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
+
+  if (data.userId && data.guestId) {
+    throw createError(400, "Provide either user ID or guest ID, not both");
+  }
+
+  // Check product
   const product = await prisma.product.findFirst({
     where: {
       id: data.productId,
@@ -17,12 +28,12 @@ export const createWishlist = async (data: {
     throw createError(404, "Product not found");
   }
 
-  const existingWishlist = await prisma.wishlistItem.findUnique({
+  // Check duplicate wishlist item
+  const existingWishlist = await prisma.wishlistItem.findFirst({
     where: {
-      userId_productId: {
-        userId: data.userId,
-        productId: data.productId,
-      },
+      productId: data.productId,
+
+      ...(data.userId ? { userId: data.userId } : { guestId: data.guestId }),
     },
   });
 
@@ -30,40 +41,73 @@ export const createWishlist = async (data: {
     throw createError(400, "Product already in wishlist");
   }
 
+  // Create wishlist
   const wishlist = await prisma.wishlistItem.create({
     data: {
       userId: data.userId,
+      guestId: data.guestId,
       productId: data.productId,
     },
   });
 
-  await redis.del(`wishlist:${data.userId}`);
-  await redis.del(`wishlist:count:${data.userId}`);
+  // Cache key
+  const ownerId = data.userId ? `user:${data.userId}` : `guest:${data.guestId}`;
+
+  await redis.del(`wishlist:${ownerId}`);
+  await redis.del(`wishlist:count:${ownerId}`);
 
   return wishlist;
 };
 
-export const getWishlist = async (userId: number) => {
-  const cacheKey = `wishlist:${userId}`;
+export const getWishlist = async (data: {
+  userId?: number;
+  guestId?: string;
+}) => {
+  // Exactly one identity is required
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
 
+  if (data.userId && data.guestId) {
+    throw createError(400, "Provide either user ID or guest ID, not both");
+  }
+
+  // Create cache key based on owner
+  const ownerId = data.userId ? `user:${data.userId}` : `guest:${data.guestId}`;
+
+  const cacheKey = `wishlist:${ownerId}`;
+
+  // Check Redis cache
   const cache = await redis.get(cacheKey);
 
   if (cache) {
     return JSON.parse(cache);
   }
 
+  // Get wishlist from database
   const wishlist = await prisma.wishlistItem.findMany({
     where: {
-      user: {
-        id: userId,
-        deletedAt: null,
-      },
       product: {
         deletedAt: null,
       },
+      ...(data.userId
+        ? {
+            userId: data.userId,
+            user: {
+              deletedAt: null,
+            },
+          }
+        : {
+            guestId: data.guestId,
+          }),
     },
+
     include: {
       product: true,
+    },
+
+    orderBy: {
+      createdAt: "desc",
     },
   });
 
@@ -73,15 +117,31 @@ export const getWishlist = async (userId: number) => {
 };
 
 export const removeWishlist = async (data: {
-  userId: number;
+  userId?: number;
+  guestId?: string;
   productId: number;
 }) => {
-  const wishlist = await prisma.wishlistItem.findUnique({
+  // Exactly one identity is required
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
+
+  if (data.userId && data.guestId) {
+    throw createError(400, "Provide either user ID or Guest ID, not both");
+  }
+
+  // Find the wishlist item
+  const wishlist = await prisma.wishlistItem.findFirst({
     where: {
-      userId_productId: {
-        userId: data.userId,
-        productId: data.productId,
-      },
+      productId: data.productId,
+
+      ...(data.userId
+        ? {
+            userId: data.userId,
+          }
+        : {
+            guestId: data.guestId,
+          }),
     },
   });
 
@@ -89,24 +149,42 @@ export const removeWishlist = async (data: {
     throw createError(404, "Wishlist item not found");
   }
 
+  // Delete using the unique primary key
   const removedWishlist = await prisma.wishlistItem.delete({
     where: {
-      userId_productId: {
-        userId: data.userId,
-        productId: data.productId,
-      },
+      id: wishlist.id,
     },
   });
-  await redis.del(`wishlist:${data.userId}`);
 
-  await redis.del(`wishlist:count:${data.userId}`);
+  // Build the same owner-based cache key
+  const ownerId = data.userId ? `user:${data.userId}` : `guest:${data.guestId}`;
+
+  // Invalidate wishlist cache
+  await redis.del(`wishlist:${ownerId}`);
+  await redis.del(`wishlist:count:${ownerId}`);
 
   return removedWishlist;
 };
 
-export const countWishlist = async (userId: number) => {
-  const cacheKey = `wishlist:count:${userId}`;
+export const countWishlist = async (data: {
+  userId?: number;
+  guestId?: string;
+}) => {
+  // Exactly one identity is required
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
 
+  if (data.userId && data.guestId) {
+    throw createError(400, "Provide either user ID or Guest ID, not both");
+  }
+
+  // Create owner-based cache key
+  const ownerId = data.userId ? `user:${data.userId}` : `guest:${data.guestId}`;
+
+  const cacheKey = `wishlist:count:${ownerId}`;
+
+  // Check Redis
   const cache = await redis.get(cacheKey);
 
   if (cache !== null) {
@@ -114,11 +192,10 @@ export const countWishlist = async (userId: number) => {
   }
 
   const count = await prisma.wishlistItem.count({
-    where: {
-      userId,
-    },
+    where: data.userId ? { userId: data.userId } : { guestId: data.guestId },
   });
 
+  // Store count in Redis for 5 minutes
   await redis.set(cacheKey, count.toString(), "EX", 300);
 
   return count;

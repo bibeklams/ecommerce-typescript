@@ -11,7 +11,6 @@ export const createCategory = async (
   },
   file?: Express.Multer.File,
 ) => {
-  // 1. Check duplicate category name
   const existingCategory = await prisma.category.findFirst({
     where: {
       name: data.name,
@@ -23,7 +22,6 @@ export const createCategory = async (
     throw createError(400, "Category already exists");
   }
 
-  // 2. Check parent category
   if (data.parentId !== undefined) {
     const parentCategory = await prisma.category.findFirst({
       where: {
