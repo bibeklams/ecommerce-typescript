@@ -7,6 +7,7 @@ import {
   removeWishlistThunk,
   getWishlistThunk,
 } from "../redux/slices/wishlistSlice";
+import { addToCartThunk } from "../redux/slices/cartSlice";
 import { FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -14,7 +15,6 @@ const ProductDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { product, loading, error } = useAppSelector((state) => state.product);
-
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
 
   const isWishlisted = product
@@ -64,18 +64,19 @@ const ProductDetailsPage = () => {
   const increaseQuantity = () => {
     setQuantity((current) => Math.min(stock, current + 1));
   };
+  const handleAddToCart = async () => {
+    try {
+      await dispatch(
+        addToCartThunk({
+          productId: product.id,
+          quantity,
+        }),
+      ).unwrap();
 
-  const handleAddToCart = () => {
-    console.log({
-      productId: product.id,
-      quantity,
-    });
-
-    // Later:
-    // dispatch(addToCartThunk({
-    //   productId: product.id,
-    //   quantity,
-    // }));
+      toast.success("Added to cart");
+    } catch {
+      toast.error("Failed to add to cart");
+    }
   };
 
   const handleWishlistToggle = async () => {
