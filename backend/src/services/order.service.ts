@@ -92,6 +92,7 @@ export const createOrder = async (data: {
     },
   });
   // Invalidate cached order lists
+  await redis.del(`order:count`);
   const orderListKeys = await redis.keys("orders:*");
 
   if (orderListKeys.length > 0) {
@@ -100,7 +101,7 @@ export const createOrder = async (data: {
   return order;
 };
 
-export const getMyOrder = async (
+export const getMyOrders = async (
   userId: number,
   search: string = "",
   limit: number = 20,
@@ -203,7 +204,7 @@ export const getMyOrder = async (
   return result;
 };
 
-export const getAllOrder = async (
+export const getAllOrders = async (
   search: string = "",
   page: number = 1,
   limit: number = 20,
@@ -432,4 +433,16 @@ export const cancelOrder = async (userId: number, orderId: number) => {
   }
 
   return cancelledOrder;
+};
+export const countOrder = async () => {
+  const cacheKey = "order:count";
+
+  const cache = await redis.get(cacheKey);
+
+  if (cache) {
+    return Number(cache);
+  }
+  const countOrder = await prisma.order.count({ where: { deletedAt: null } });
+  await redis.set(cacheKey, countOrder.toString(), "EX", 300);
+  return countOrder;
 };
