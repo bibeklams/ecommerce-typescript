@@ -9,6 +9,8 @@ import ProductDetailsPage from "../pages/ProductDetailsPage";
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
 import WishListPage from "../pages/wishlist/wishlistPage";
+import CartPage from "../pages/cart/CartPage";
+
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
@@ -27,6 +29,7 @@ const AppRoutes = () => {
 
         <Route path="/products/:id" element={<ProductDetailsPage />} />
         <Route path="/wishlist" element={<WishListPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/register" element={<RegisterPage />} />

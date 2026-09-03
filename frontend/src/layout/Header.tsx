@@ -1,18 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaHeart } from "react-icons/fa";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { logout } from "../redux/slices/authSlice";
 import { useEffect } from "react";
 import { countWishlistThunk } from "../redux/slices/wishlistSlice";
+import { countCartItemThunk } from "../redux/slices/cartSlice";
 const Header = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const { user, loading } = useAppSelector((state) => state.auth);
+
   const { count } = useAppSelector((state) => state.wishlist);
+  const { count: cartCount } = useAppSelector((state) => state.cart);
   useEffect(() => {
     dispatch(countWishlistThunk());
+    dispatch(countCartItemThunk());
   }, [dispatch]);
   const handleLogout = async () => {
     const result = await dispatch(logout());
@@ -68,6 +72,24 @@ const Header = () => {
             </span>
 
             <span>Wishlist</span>
+
+            <span className="absolute bottom-2 left-0 h-[2px] w-0 bg-black transition-all duration-200 group-hover:w-full" />
+          </Link>
+          <Link
+            to="/cart"
+            className="group relative flex items-center gap-2 py-5 text-sm font-medium text-gray-700 transition hover:text-black"
+          >
+            <span className="relative">
+              <FaShoppingCart className="text-lg" />
+
+              {cartCount > 0 && (
+                <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
+            </span>
+
+            <span>Cart</span>
 
             <span className="absolute bottom-2 left-0 h-[2px] w-0 bg-black transition-all duration-200 group-hover:w-full" />
           </Link>

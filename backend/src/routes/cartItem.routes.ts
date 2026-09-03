@@ -3,11 +3,11 @@ import * as cartItemController from "../controllers/cartItem.controller.js";
 
 const router = express.Router();
 
-router.get("/count", cartItemController.countCartItem);
-router.post("/:productId", cartItemController.addToCart);
+router.get("/items/count", cartItemController.countCartItem);
+router.post("/items/:productId", cartItemController.addToCart);
 
-router.patch("/:productId", cartItemController.updateCartItem);
+router.patch("/items/:productId", cartItemController.updateCartItem);
 
-router.delete("/:productId", cartItemController.removeCartItem);
+router.delete("/items/:productId", cartItemController.removeCartItem);
 
 export default router;

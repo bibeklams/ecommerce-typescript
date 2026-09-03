@@ -25,12 +25,14 @@ export const addToCart = async (data: {
     throw createError(404, "Product not found");
   }
 
-  const cart = await prisma.cart.findFirst({
+  let cart = await prisma.cart.findFirst({
     where: data.userId ? { userId: data.userId } : { guestId: data.guestId },
   });
 
   if (!cart) {
-    throw createError(404, "Cart not found");
+    cart = await prisma.cart.create({
+      data: data.userId ? { userId: data.userId } : { guestId: data.guestId },
+    });
   }
 
   const existingItem = await prisma.cartItem.findUnique({
