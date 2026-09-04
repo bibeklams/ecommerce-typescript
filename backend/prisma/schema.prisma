@@ -258,13 +258,20 @@ enum OrderStatus {
 enum PaymentMethod {
   CASH_ON_DELIVERY
   ESEWA
-  KHALTI
 }
 
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  NONE
+  REQUESTED
+  APPROVED
+  REJECTED
   REFUNDED
 }
 
@@ -275,8 +282,8 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   transactionId String?
-
-  order Order @relation(fields: [orderId], references: [id])
+  refundStatus  RefundStatus  @default(NONE)
+  order         Order         @relation(fields: [orderId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
