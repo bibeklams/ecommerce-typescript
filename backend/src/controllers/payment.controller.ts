@@ -1,5 +1,6 @@
 import * as paymentService from "../services/payment.service.js";
 import type { Request, Response, NextFunction } from "express";
+import { PaymentStatus } from "../generated/prisma/client.js";
 
 export const createPayment = async (
   req: Request,
@@ -49,14 +50,24 @@ export const getAllPayment = async (
 ) => {
   try {
     const search = String(req.query.search ?? "");
+
+    const status = req.query.status
+      ? (String(req.query.status) as PaymentStatus)
+      : undefined;
+
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 20);
 
-    const payment = await paymentService.getAllPayments(search, page, limit);
+    const payments = await paymentService.getAllPayments(
+      search,
+      status,
+      page,
+      limit,
+    );
 
     res.status(200).json({
       success: true,
-      data: payment,
+      data: payments,
     });
   } catch (error) {
     next(error);

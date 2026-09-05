@@ -192,6 +192,7 @@ export const updateRefundStatus = async (
 };
 export const getAllPayments = async (
   search: string = "",
+  status?: PaymentStatus,
   page: number = 1,
   limit: number = 20,
 ) => {
@@ -207,6 +208,10 @@ export const getAllPayments = async (
         mode: "insensitive" as const,
       },
     },
+
+    ...(status && {
+      status,
+    }),
   };
 
   const [payments, totalPayments] = await Promise.all([
