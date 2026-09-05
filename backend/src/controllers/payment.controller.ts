@@ -7,7 +7,7 @@ export const createPayment = async (
   next: NextFunction,
 ) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user!.id;
     const orderId = Number(req.params.orderId);
     const method = req.body.method;
 

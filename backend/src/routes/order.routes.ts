@@ -3,11 +3,18 @@ import * as orderController from "../controllers/order.controller.js";
 
 import protect from "../middleware/auth.middleware.js";
 import adminOnly from "../middleware/role.middleware.js";
-
+import { validation } from "../middleware/validation.middleware.js";
+import { createOrderSchema } from "../validation/order.validate.js";
 const router = express.Router();
 
 router.get("/count", protect, adminOnly, orderController.countOrder);
-router.post("/", protect, orderController.createOrder);
+
+router.post(
+  "/",
+  protect,
+  validation(createOrderSchema),
+  orderController.createOrder,
+);
 router.get("/my", protect, orderController.getMyOrder);
 router.get("/", protect, adminOnly, orderController.getAllOrders);
 

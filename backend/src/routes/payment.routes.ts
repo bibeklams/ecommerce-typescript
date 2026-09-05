@@ -24,9 +24,16 @@ router.patch(
   paymentController.updatePaymentStatus,
 );
 
-router.patch("/:paymentId/refund", protect, paymentController.requestRefund);
+// User requests refund
 router.patch(
-  "/:paymentId/refund",
+  "/:paymentId/refund-request",
+  protect,
+  paymentController.requestRefund,
+);
+
+// Admin approves/rejects refund
+router.patch(
+  "/:paymentId/refund/status",
   protect,
   adminOnly,
   paymentController.updateRefundStatus,

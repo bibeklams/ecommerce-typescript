@@ -1,9 +1,12 @@
 import prisma from "../config/prisma.js";
 import createError from "http-errors";
-import { PaymentMethod } from "../generated/prisma/client.js";
-import { PaymentStatus } from "../generated/prisma/client.js";
-import { RefundStatus } from "../generated/prisma/client.js";
 import crypto from "crypto";
+
+import {
+  PaymentMethod,
+  PaymentStatus,
+  RefundStatus,
+} from "../generated/prisma/client.js";
 
 export const createPayment = async (
   userId: number,
@@ -22,25 +25,27 @@ export const createPayment = async (
     throw createError(404, "Order not found");
   }
 
-  const payment = await prisma.payment.findUnique({
+  const existingPayment = await prisma.payment.findUnique({
     where: {
       orderId: order.id,
     },
   });
 
-  if (payment) {
+  if (existingPayment) {
     throw createError(400, "Payment already exists for this order");
   }
 
-  const newPayment = await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       orderId: order.id,
       amount: order.total,
       method,
+      status: PaymentStatus.PENDING,
+      refundStatus: RefundStatus.NONE,
     },
   });
 
-  return newPayment;
+  return payment;
 };
 
 export const getMyPayment = async (userId: number, orderId: number) => {
@@ -83,6 +88,23 @@ export const updatePaymentStatus = async (
     throw createError(404, "Payment not found");
   }
 
+  if (payment.status === PaymentStatus.PAID) {
+    throw createError(400, "Payment is already paid");
+  }
+
+  if (payment.status === PaymentStatus.REFUNDED) {
+    throw createError(400, "Refunded payment cannot be changed");
+  }
+
+  const allowedStatuses: PaymentStatus[] = [
+    PaymentStatus.PAID,
+    PaymentStatus.FAILED,
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    throw createError(400, "Invalid payment status");
+  }
+
   const updatedPayment = await prisma.payment.update({
     where: {
       id: paymentId,
@@ -94,6 +116,7 @@ export const updatePaymentStatus = async (
 
   return updatedPayment;
 };
+
 export const requestRefund = async (userId: number, paymentId: number) => {
   const payment = await prisma.payment.findFirst({
     where: {
@@ -109,11 +132,11 @@ export const requestRefund = async (userId: number, paymentId: number) => {
     throw createError(404, "Payment not found");
   }
 
-  if (payment.status !== "PAID") {
+  if (payment.status !== PaymentStatus.PAID) {
     throw createError(400, "Only paid payments can be refunded");
   }
 
-  if (payment.refundStatus !== "NONE") {
+  if (payment.refundStatus !== RefundStatus.NONE) {
     throw createError(400, "Refund request already exists");
   }
 
@@ -122,7 +145,7 @@ export const requestRefund = async (userId: number, paymentId: number) => {
       id: paymentId,
     },
     data: {
-      refundStatus: "REQUESTED",
+      refundStatus: RefundStatus.REQUESTED,
     },
   });
 
@@ -143,8 +166,17 @@ export const updateRefundStatus = async (
     throw createError(404, "Payment not found");
   }
 
-  if (payment.refundStatus !== "REQUESTED") {
+  if (payment.refundStatus !== RefundStatus.REQUESTED) {
     throw createError(400, "No refund request is pending");
+  }
+
+  const allowedStatuses: RefundStatus[] = [
+    RefundStatus.APPROVED,
+    RefundStatus.REJECTED,
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    throw createError(400, "Invalid refund status");
   }
 
   const updatedPayment = await prisma.payment.update({
@@ -163,37 +195,37 @@ export const getAllPayments = async (
   page: number = 1,
   limit: number = 20,
 ) => {
+  page = Math.max(1, page);
+  limit = Math.min(Math.max(1, limit), 100);
+
   const skip = (page - 1) * limit;
 
-  const payments = await prisma.payment.findMany({
-    where: {
-      order: {
-        shippingName: {
-          contains: search,
-          mode: "insensitive",
-        },
+  const where = {
+    order: {
+      shippingName: {
+        contains: search,
+        mode: "insensitive" as const,
       },
     },
-    include: {
-      order: true,
-    },
-    skip,
-    take: limit,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 
-  const totalPayments = await prisma.payment.count({
-    where: {
-      order: {
-        shippingName: {
-          contains: search,
-          mode: "insensitive",
-        },
+  const [payments, totalPayments] = await Promise.all([
+    prisma.payment.findMany({
+      where,
+      include: {
+        order: true,
       },
-    },
-  });
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+
+    prisma.payment.count({
+      where,
+    }),
+  ]);
 
   const totalPages = Math.ceil(totalPayments / limit);
 
@@ -219,14 +251,46 @@ export const initiateEsewaPayment = async (userId: number, orderId: number) => {
     throw createError(404, "Order not found");
   }
 
+  const payment = await prisma.payment.findUnique({
+    where: {
+      orderId: order.id,
+    },
+  });
+
+  if (!payment) {
+    throw createError(404, "Payment not found");
+  }
+
+  if (payment.method !== PaymentMethod.ESEWA) {
+    throw createError(400, "This order is not using eSewa payment");
+  }
+
+  if (payment.status === PaymentStatus.PAID) {
+    throw createError(400, "Payment is already completed");
+  }
+
+  if (payment.status === PaymentStatus.REFUNDED) {
+    throw createError(400, "Payment has already been refunded");
+  }
+
   const transactionUuid = `order-${order.id}-${Date.now()}`;
 
   const totalAmount = Number(order.total);
 
-  const message = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${process.env.ESEWA_PRODUCT_CODE}`;
+  const productCode = process.env.ESEWA_PRODUCT_CODE;
+  const secretKey = process.env.ESEWA_SECRET_KEY;
+
+  if (!productCode || !secretKey) {
+    throw createError(500, "eSewa configuration is missing");
+  }
+
+  const message =
+    `total_amount=${totalAmount},` +
+    `transaction_uuid=${transactionUuid},` +
+    `product_code=${productCode}`;
 
   const signature = crypto
-    .createHmac("sha256", process.env.ESEWA_SECRET_KEY!)
+    .createHmac("sha256", secretKey)
     .update(message)
     .digest("base64");
 
@@ -235,7 +299,7 @@ export const initiateEsewaPayment = async (userId: number, orderId: number) => {
     tax_amount: 0,
     total_amount: totalAmount,
     transaction_uuid: transactionUuid,
-    product_code: process.env.ESEWA_PRODUCT_CODE,
+    product_code: productCode,
     product_service_charge: 0,
     product_delivery_charge: 0,
     success_url: process.env.ESEWA_SUCCESS_URL,
