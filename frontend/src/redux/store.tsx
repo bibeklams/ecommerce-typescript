@@ -6,6 +6,8 @@ import categoryReducer from "./slices/categorySlice";
 import seoReducer from "./slices/seoSlice";
 import wishlistReducer from "./slices/wishlistSlice";
 import cartReducer from "./slices/cartSlice";
+import orderReducer from "./slices/orderSlice";
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -14,6 +16,7 @@ export const store = configureStore({
     seo: seoReducer,
     wishlist: wishlistReducer,
     cart: cartReducer,
+    order: orderReducer,
   },
 });
 

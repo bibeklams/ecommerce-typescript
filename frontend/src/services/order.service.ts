@@ -16,9 +16,10 @@ export const getAllOrders = async (
   search: string = "",
   page: number = 1,
   limit: number = 20,
+  status: OrderStatus,
 ): Promise<OrderListResponse> => {
   const response = await api.get("/orders", {
-    params: { search, page, limit },
+    params: { search, page, limit, status },
   });
 
   return response.data.data;
