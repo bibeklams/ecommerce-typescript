@@ -6,6 +6,7 @@ import type {
   PaymentStatus,
   RefundStatus,
   PaymentListResponse,
+  EsewaPaymentData,
 } from "../types/payment";
 
 export const createPayment = async (
@@ -29,9 +30,10 @@ export const getAllPayment = async (
   search: string = "",
   page: number = 1,
   limit: number = 20,
+  status?: PaymentStatus,
 ): Promise<PaymentListResponse> => {
   const response = await api.get("/payments", {
-    params: { search, page, limit },
+    params: { search, page, limit, status },
   });
 
   return response.data.data;
@@ -39,9 +41,8 @@ export const getAllPayment = async (
 
 export const initiateEsewaPayment = async (
   orderId: number,
-): Promise<Payment> => {
+): Promise<EsewaPaymentData> => {
   const response = await api.post(`/payments/${orderId}/esewa`);
-
   return response.data.data;
 };
 

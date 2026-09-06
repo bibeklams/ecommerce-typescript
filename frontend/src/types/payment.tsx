@@ -9,6 +9,19 @@ export type RefundStatus =
   | "REJECTED"
   | "REFUNDED";
 
+export interface EsewaPaymentData {
+  amount: string;
+  tax_amount: string;
+  total_amount: string;
+  transaction_uuid: string;
+  product_code: string;
+  product_service_charge: string;
+  product_delivery_charge: string;
+  success_url: string;
+  failure_url: string;
+  signed_field_names: string;
+  signature: string;
+}
 export interface PaymentListResponse {
   payments: Payment[];
   page: number;

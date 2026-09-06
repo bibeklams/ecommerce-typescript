@@ -64,7 +64,7 @@ export const getAllOrderThunk = createAsyncThunk<
     search?: string;
     page?: number;
     limit?: number;
-    status: OrderStatus;
+    status?: OrderStatus;
   }
 >("orders/getAllOrders", async (params) => {
   const response = await getAllOrders(
