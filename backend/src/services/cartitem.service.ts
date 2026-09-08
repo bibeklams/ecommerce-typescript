@@ -8,6 +8,14 @@ export const addToCart = async (data: {
   guestId?: string;
   quantity: number;
 }) => {
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
+
+  if (data.quantity <= 0) {
+    throw createError(400, "Quantity must be greater than 0");
+  }
+
   const cacheKey = data.userId ? `cart:${data.userId}` : `cart:${data.guestId}`;
 
   const countCacheKey = data.userId
@@ -25,7 +33,7 @@ export const addToCart = async (data: {
     throw createError(404, "Product not found");
   }
 
-  let cart = await prisma.cart.findFirst({
+  let cart = await prisma.cart.findUnique({
     where: data.userId ? { userId: data.userId } : { guestId: data.guestId },
   });
 

@@ -11,7 +11,7 @@ export const createOrder = async (
 
     // userId should come from authenticated user
     const userId = req.user!.id;
-
+    console.log("Authenticated userId:", req.user!.id);
     const order = await orderService.createOrder({
       userId,
       shippingName,

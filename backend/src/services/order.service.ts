@@ -9,7 +9,7 @@ export const createOrder = async (data: {
   shippingPhone: string;
   shippingAddress: string;
 }) => {
-  // 1. Get user's cart with its items and products
+  // 1. Find user's cart
   const cart = await prisma.cart.findUnique({
     where: {
       userId: data.userId,
@@ -27,6 +27,9 @@ export const createOrder = async (data: {
     },
   });
 
+  console.log("Looking for userId:", data.userId);
+  console.log("Cart found:", cart);
+
   if (!cart) {
     throw createError(400, "No cart found");
   }
@@ -35,7 +38,7 @@ export const createOrder = async (data: {
     throw createError(400, "Cart is empty");
   }
 
-  // 2. Check every product
+  // 2. Validate products and stock
   for (const item of cart.items) {
     if (item.product.deletedAt !== null) {
       throw createError(
@@ -56,51 +59,50 @@ export const createOrder = async (data: {
     }
   }
 
-  // 3. Calculate total for the whole order
+  // 3. Calculate total
   const total = cart.items.reduce((sum, item) => {
     return sum + Number(item.product.price) * item.quantity;
   }, 0);
 
-  // 4. Create Order + OrderItems
-  const order = await prisma.order.create({
-    data: {
-      userId: data.userId,
-      shippingName: data.shippingName,
-      shippingPhone: data.shippingPhone,
-      shippingAddress: data.shippingAddress,
-      total,
+  let order;
 
-      orderItems: {
-        create: cart.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.product.price,
-          total: Number(item.product.price) * item.quantity,
-        })),
+  try {
+    order = await prisma.order.create({
+      data: {
+        userId: data.userId,
+        shippingName: data.shippingName,
+        shippingPhone: data.shippingPhone,
+        shippingAddress: data.shippingAddress,
+        total,
       },
-    },
+    });
 
-    include: {
-      orderItems: true,
-    },
-  });
+    console.log("ORDER CREATED:", order);
+  } catch (error) {
+    console.error("========== ORDER CREATE ERROR ==========");
+    console.error(error);
+    console.error("========================================");
+    throw error;
+  }
 
-  // 5. Clear the cart
+  // 5. Clear cart
   await prisma.cartItem.deleteMany({
     where: {
       cartId: cart.id,
     },
   });
-  // Invalidate cached order lists
-  await redis.del(`order:count`);
+
+  // 6. Invalidate order cache
+  await redis.del("order:count");
+
   const orderListKeys = await redis.keys("orders:*");
 
   if (orderListKeys.length > 0) {
     await redis.del(...orderListKeys);
   }
+
   return order;
 };
-
 export const getMyOrders = async (
   userId: number,
   search: string = "",

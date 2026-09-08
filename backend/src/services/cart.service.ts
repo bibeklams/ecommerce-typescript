@@ -3,6 +3,10 @@ import createError from "http-errors";
 import redis from "../config/redis.js";
 
 export const getCart = async (data: { userId?: number; guestId?: string }) => {
+  if (!data.userId && !data.guestId) {
+    throw createError(400, "User ID or Guest ID is required");
+  }
+
   const cacheKey = data.userId ? `cart:${data.userId}` : `cart:${data.guestId}`;
 
   const cache = await redis.get(cacheKey);
@@ -13,7 +17,6 @@ export const getCart = async (data: { userId?: number; guestId?: string }) => {
 
   const cart = await prisma.cart.findUnique({
     where: data.userId ? { userId: data.userId } : { guestId: data.guestId },
-
     include: {
       items: {
         include: {
@@ -22,7 +25,6 @@ export const getCart = async (data: { userId?: number; guestId?: string }) => {
               id: true,
               name: true,
               price: true,
-
               gallery: {
                 include: {
                   images: {

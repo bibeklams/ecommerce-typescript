@@ -19,16 +19,19 @@ export const addToCart = async (
     if (Number.isNaN(quantity) || quantity <= 0) {
       throw createError(400, "Invalid quantity");
     }
-    const userId = req.user?.id;
-    let guestId = req.cookies.guestId;
 
+    const userId = req.user?.id;
+
+    let guestId = req.cookies.guestId;
+    console.log("userId:", req.user?.id);
+    console.log("guestId:", req.cookies.guestId);
     // Guest user
     if (!userId && !guestId) {
       guestId = crypto.randomUUID();
 
       res.cookie("guestId", guestId, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
       });
     }

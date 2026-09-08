@@ -1,13 +1,22 @@
 import express from "express";
 import * as cartItemController from "../controllers/cartItem.controller.js";
-
+import optionalAuth from "../middleware/optionalAuth.middleware.js";
 const router = express.Router();
 
-router.get("/items/count", cartItemController.countCartItem);
-router.post("/items/:productId", cartItemController.addToCart);
+router.get("/items/count", optionalAuth, cartItemController.countCartItem);
 
-router.patch("/items/:productId", cartItemController.updateCartItem);
+router.post("/items/:productId", optionalAuth, cartItemController.addToCart);
 
-router.delete("/items/:productId", cartItemController.removeCartItem);
+router.patch(
+  "/items/:productId",
+  optionalAuth,
+  cartItemController.updateCartItem,
+);
+
+router.delete(
+  "/items/:productId",
+  optionalAuth,
+  cartItemController.removeCartItem,
+);
 
 export default router;
