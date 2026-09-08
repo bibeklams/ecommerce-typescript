@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
-
 import CheckoutForm from "../../components/checkout/CheckoutForm";
-
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-
 import { getCartThunk } from "../../redux/slices/cartSlice";
 import { createOrderThunk } from "../../redux/slices/orderSlice";
 import { createPaymentThunk } from "../../redux/slices/paymentSlice";
-
 import { initiateEsewaPayment } from "../../services/payment.service";
-
 import type { CheckoutValues } from "../../types/checkout";
 import type { EsewaPaymentData } from "../../types/payment";
 
+import { useNavigate } from "react-router-dom";
+
 const CheckoutPage = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +23,7 @@ const CheckoutPage = () => {
     dispatch(getCartThunk());
   }, [dispatch]);
 
-  // Submit payment data to eSewa
+  // Submit eSewa payment form
   const submitToEsewa = (paymentData: EsewaPaymentData) => {
     const form = document.createElement("form");
 
@@ -49,57 +47,64 @@ const CheckoutPage = () => {
   };
 
   const handleSubmit = async (values: CheckoutValues) => {
-    console.log("Checkout values:", values);
-
     setIsSubmitting(true);
 
     try {
-      // --------------------------------
-      // 1. CREATE ORDER
-      // --------------------------------
-      const order = await dispatch(
-        createOrderThunk({
-          shippingName: values.shippingName,
-          shippingPhone: values.shippingPhone,
-          shippingAddress: values.shippingAddress,
-        }),
-      ).unwrap();
+      // =====================================================
+      // 1. CASH ON DELIVERY
+      // =====================================================
 
-      console.log("Order created:", order);
-
-      // --------------------------------
-      // 2. CREATE PAYMENT
-      // --------------------------------
-      const payment = await dispatch(
-        createPaymentThunk({
-          orderId: order.id,
-          method: values.paymentMethod,
-        }),
-      ).unwrap();
-
-      console.log("Payment created:", payment);
-
-      // --------------------------------
-      // 3. CASH ON DELIVERY
-      // --------------------------------
       if (values.paymentMethod === "CASH_ON_DELIVERY") {
-        console.log("COD order completed:", order);
+        const order = await dispatch(
+          createOrderThunk({
+            shippingName: values.shippingName,
+            shippingPhone: values.shippingPhone,
+            shippingAddress: values.shippingAddress,
+          }),
+        ).unwrap();
+
+        console.log("Order created:", order);
+
+        const payment = await dispatch(
+          createPaymentThunk({
+            orderId: order.id,
+            method: "CASH_ON_DELIVERY",
+          }),
+        ).unwrap();
+
+        console.log("Payment created:", payment);
 
         // Later:
-        // navigate(`/orders/${order.id}`);
+        navigate(`/order-success/${order.id}`);
 
         return;
       }
 
-      // --------------------------------
-      // 4. ESEWA
-      // --------------------------------
+      // =====================================================
+      // 2. ESEWA
+      // =====================================================
+
       if (values.paymentMethod === "ESEWA") {
-        const paymentData = await initiateEsewaPayment(order.id);
+        /*
+         * IMPORTANT:
+         *
+         * We DO NOT create an order here.
+         * We DO NOT create a payment here.
+         *
+         * Backend creates a pending eSewa payment attempt
+         * and returns the eSewa form data.
+         */
+
+        const paymentData = await initiateEsewaPayment({
+          shippingName: values.shippingName,
+          shippingPhone: values.shippingPhone,
+          shippingAddress: values.shippingAddress,
+        });
 
         console.log("eSewa payment data:", paymentData);
 
         submitToEsewa(paymentData);
+        return;
       }
     } catch (error) {
       console.error("Checkout failed:", error);
@@ -108,9 +113,10 @@ const CheckoutPage = () => {
     }
   };
 
-  // --------------------------------
+  // =====================================================
   // LOADING
-  // --------------------------------
+  // =====================================================
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -119,9 +125,10 @@ const CheckoutPage = () => {
     );
   }
 
-  // --------------------------------
+  // =====================================================
   // ERROR
-  // --------------------------------
+  // =====================================================
+
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -130,9 +137,10 @@ const CheckoutPage = () => {
     );
   }
 
-  // --------------------------------
+  // =====================================================
   // EMPTY CART
-  // --------------------------------
+  // =====================================================
+
   if (items.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -140,6 +148,10 @@ const CheckoutPage = () => {
       </div>
     );
   }
+
+  // =====================================================
+  // PAGE
+  // =====================================================
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
@@ -150,6 +162,7 @@ const CheckoutPage = () => {
           {/* =========================
               PRODUCTS
           ========================== */}
+
           <section className="rounded-xl bg-white p-6 shadow-md">
             <h2 className="mb-6 text-xl font-semibold text-gray-800">
               Your Products
@@ -162,6 +175,7 @@ const CheckoutPage = () => {
                   className="flex gap-4 rounded-lg border border-gray-200 p-4"
                 >
                   {/* Product Image */}
+
                   {item.product.gallery?.images?.[0]?.url ? (
                     <img
                       src={item.product.gallery.images[0].url}
@@ -175,6 +189,7 @@ const CheckoutPage = () => {
                   )}
 
                   {/* Product Information */}
+
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">
                       {item.product.name}
@@ -200,6 +215,7 @@ const CheckoutPage = () => {
           {/* =========================
               CHECKOUT FORM
           ========================== */}
+
           <section>
             <CheckoutForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
           </section>

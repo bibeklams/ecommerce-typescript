@@ -15,7 +15,7 @@ import RegisterPage from "../components/auth/RegisterPage";
 import WishListPage from "../pages/wishlist/wishlistPage";
 import CartPage from "../pages/cart/CartPage";
 import CheckoutPage from "../pages/checkout/CheckoutPage";
-
+import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
@@ -52,7 +52,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/checkout" element={<CheckoutPage />} />
       </Route>
-
+      <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       {/* =========================
           ADMIN ROUTES
           Login + ADMIN role required

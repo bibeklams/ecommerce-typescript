@@ -1,12 +1,14 @@
-import { removeCartItemThunk } from "../../redux/slices/cartSlice";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+
+import { removeCartItemThunk } from "../../redux/slices/cartSlice";
+
 import {
   addToWishlist,
   removeWishlistThunk,
 } from "../../redux/slices/wishlistSlice";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { getWishlistThunk } from "../../redux/slices/wishlistSlice";
-import { useEffect } from "react";
+
 import type { CartItem as CartItemType } from "../../types/cartItem";
 
 interface CartItemProps {
@@ -17,32 +19,10 @@ const CartItem = ({ item }: CartItemProps) => {
   const dispatch = useAppDispatch();
 
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
-  useEffect(() => {
-    dispatch(getWishlistThunk());
-  }, [dispatch]);
+
   const isWishlisted = wishlistItems.some(
     (wishlistItem) => wishlistItem.productId === item.productId,
   );
-
-  // const handleIncrease = () => {
-  //   dispatch(
-  //     updateCartItemThunk({
-  //       productId: item.productId,
-  //       quantity: item.quantity + 1,
-  //     }),
-  //   );
-  // };
-
-  // const handleDecrease = () => {
-  //   if (item.quantity <= 1) return;
-
-  //   dispatch(
-  //     updateCartItemThunk({
-  //       productId: item.productId,
-  //       quantity: item.quantity - 1,
-  //     }),
-  //   );
-  // };
 
   const handleRemove = () => {
     dispatch(removeCartItemThunk(item.productId));
@@ -64,7 +44,7 @@ const CartItem = ({ item }: CartItemProps) => {
         className="w-4 h-4 mt-1 sm:mt-0 accent-blue-600 cursor-pointer"
       />
 
-      {/* Product image */}
+      {/* Product Image */}
       {item.product?.gallery?.images?.[0]?.url && (
         <img
           src={item.product.gallery.images[0].url}
@@ -73,36 +53,20 @@ const CartItem = ({ item }: CartItemProps) => {
         />
       )}
 
-      {/* Product name + price */}
+      {/* Product Name + Price */}
       <div className="flex-1 min-w-0">
         <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">
           {item.product?.name}
         </h3>
+
         <p className="text-sm text-gray-600 mt-1">Rs. {item.product?.price}</p>
       </div>
 
       {/* Quantity */}
       <div className="flex items-center gap-2 border border-gray-300 rounded-md px-2 py-1">
-        {/* <button
-          type="button"
-          onClick={handleDecrease}
-          disabled={item.quantity <= 1}
-          className="w-7 h-7 flex items-center justify-center rounded text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          -
-        </button> */}
-
         <span className="w-6 text-center text-sm font-medium text-gray-900">
           {item.quantity}
         </span>
-
-        {/* <button
-          type="button"
-          onClick={handleIncrease}
-          className="w-7 h-7 flex items-center justify-center rounded text-gray-600 hover:bg-gray-100 transition-colors"
-        >
-          +
-        </button> */}
       </div>
 
       {/* Remove */}

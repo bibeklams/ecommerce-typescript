@@ -64,35 +64,49 @@ export const createOrder = async (data: {
     return sum + Number(item.product.price) * item.quantity;
   }, 0);
 
-  let order;
-
-  try {
-    order = await prisma.order.create({
+  // 4. Create order + order items + clear cart
+  const order = await prisma.$transaction(async (tx) => {
+    // Create order
+    const newOrder = await tx.order.create({
       data: {
         userId: data.userId,
         shippingName: data.shippingName,
         shippingPhone: data.shippingPhone,
         shippingAddress: data.shippingAddress,
         total,
+
+        // Create OrderItems
+        orderItems: {
+          create: cart.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: Number(item.product.price),
+            total: Number(item.product.price) * item.quantity,
+          })),
+        },
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
       },
     });
 
-    console.log("ORDER CREATED:", order);
-  } catch (error) {
-    console.error("========== ORDER CREATE ERROR ==========");
-    console.error(error);
-    console.error("========================================");
-    throw error;
-  }
+    // Clear cart only after order + order items are created
+    await tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+      },
+    });
 
-  // 5. Clear cart
-  await prisma.cartItem.deleteMany({
-    where: {
-      cartId: cart.id,
-    },
+    return newOrder;
   });
 
-  // 6. Invalidate order cache
+  console.log("ORDER CREATED:", order);
+
+  // 5. Invalidate order cache
   await redis.del("order:count");
 
   const orderListKeys = await redis.keys("orders:*");
@@ -103,6 +117,7 @@ export const createOrder = async (data: {
 
   return order;
 };
+
 export const getMyOrders = async (
   userId: number,
   search: string = "",

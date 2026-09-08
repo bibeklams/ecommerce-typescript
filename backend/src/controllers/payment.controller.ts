@@ -139,11 +139,10 @@ export const initiateEsewaPayment = async (
 ) => {
   try {
     const userId = req.user!.id;
-    const orderId = Number(req.params.orderId);
 
     const paymentData = await paymentService.initiateEsewaPayment(
       userId,
-      orderId,
+      req.body,
     );
 
     res.status(200).json({

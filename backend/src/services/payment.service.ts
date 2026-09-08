@@ -7,7 +7,11 @@ import {
   PaymentStatus,
   RefundStatus,
 } from "../generated/prisma/client.js";
-
+interface EsewaCheckoutData {
+  shippingName: string;
+  shippingPhone: string;
+  shippingAddress: string;
+}
 export const createPayment = async (
   userId: number,
   orderId: number,
@@ -243,51 +247,70 @@ export const getAllPayments = async (
   };
 };
 
-export const initiateEsewaPayment = async (userId: number, orderId: number) => {
-  const order = await prisma.order.findFirst({
+export const initiateEsewaPayment = async (
+  userId: number,
+  data: EsewaCheckoutData,
+) => {
+  const cart = await prisma.cart.findUnique({
     where: {
-      id: orderId,
       userId,
-      deletedAt: null,
+    },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              inventory: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  if (!order) {
-    throw createError(404, "Order not found");
+  if (!cart) {
+    throw createError(400, "No cart found");
   }
 
-  const payment = await prisma.payment.findUnique({
-    where: {
-      orderId: order.id,
-    },
-  });
-
-  if (!payment) {
-    throw createError(404, "Payment not found");
+  if (cart.items.length === 0) {
+    throw createError(400, "Cart is empty");
   }
 
-  if (payment.method !== PaymentMethod.ESEWA) {
-    throw createError(400, "This order is not using eSewa payment");
+  // Validate cart before sending the customer to eSewa
+  for (const item of cart.items) {
+    if (item.product.deletedAt !== null) {
+      throw createError(
+        400,
+        `Product ${item.productId} is no longer available`,
+      );
+    }
+
+    if (item.quantity <= 0) {
+      throw createError(400, `Invalid quantity for product ${item.productId}`);
+    }
+
+    if (
+      item.product.inventory &&
+      item.quantity > item.product.inventory.quantity
+    ) {
+      throw createError(400, `Not enough stock for product ${item.productId}`);
+    }
   }
 
-  if (payment.status === PaymentStatus.PAID) {
-    throw createError(400, "Payment is already completed");
-  }
-
-  if (payment.status === PaymentStatus.REFUNDED) {
-    throw createError(400, "Payment has already been refunded");
-  }
-
-  const transactionUuid = `order-${order.id}-${Date.now()}`;
-
-  const totalAmount = Number(order.total);
+  const totalAmount = cart.items.reduce((sum, item) => {
+    return sum + Number(item.product.price) * item.quantity;
+  }, 0);
 
   const productCode = process.env.ESEWA_PRODUCT_CODE;
   const secretKey = process.env.ESEWA_SECRET_KEY;
+  const successUrl = process.env.ESEWA_SUCCESS_URL;
+  const failureUrl = process.env.ESEWA_FAILURE_URL;
 
-  if (!productCode || !secretKey) {
+  if (!productCode || !secretKey || !successUrl || !failureUrl) {
     throw createError(500, "eSewa configuration is missing");
   }
+
+  const transactionUuid = `cart-${userId}-${Date.now()}`;
 
   const message =
     `total_amount=${totalAmount},` +
@@ -307,9 +330,14 @@ export const initiateEsewaPayment = async (userId: number, orderId: number) => {
     product_code: productCode,
     product_service_charge: 0,
     product_delivery_charge: 0,
-    success_url: process.env.ESEWA_SUCCESS_URL,
-    failure_url: process.env.ESEWA_FAILURE_URL,
+    success_url: successUrl,
+    failure_url: failureUrl,
     signed_field_names: "total_amount,transaction_uuid,product_code",
     signature,
+
+    // You need these after eSewa returns
+    shippingName: data.shippingName,
+    shippingPhone: data.shippingPhone,
+    shippingAddress: data.shippingAddress,
   };
 };
