@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { getSingleProductThunk } from "../redux/slices/productSlice";
 import {
@@ -97,6 +97,26 @@ const ProductDetailsPage = () => {
   return (
     <main className="min-h-screen bg-white px-4 py-8 md:px-8">
       <div className="mx-auto max-w-6xl">
+        {/* BACK */}
+        <Link
+          to="/"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900"
+        >
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12.79 5.23a.75.75 0 010 1.06L9.06 10l3.73 3.71a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Home
+        </Link>
+
         {/* ================= PRODUCT ================= */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1fr_1fr]">
           {/* ================= LEFT ================= */}

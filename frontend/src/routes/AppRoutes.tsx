@@ -15,6 +15,9 @@ import RegisterPage from "../components/auth/RegisterPage";
 import WishListPage from "../pages/wishlist/wishlistPage";
 import CartPage from "../pages/cart/CartPage";
 import CheckoutPage from "../pages/checkout/CheckoutPage";
+import MyOrdersPage from "../pages/order/MyOrdersPage";
+import OrderDetailsPage from "../pages/order/OrderDetailsPage";
+
 import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
@@ -51,6 +54,8 @@ const AppRoutes = () => {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/my-order" element={<MyOrdersPage />} />
+        <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
       </Route>
       <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       {/* =========================
