@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import type { Order, OrderListResponse, OrderStatus } from "../../types/order";
 import {
   createOrder,
@@ -122,7 +126,11 @@ export const countOrderThunk = createAsyncThunk<number>(
 const orderSlice = createSlice({
   name: "order",
   initialState,
-  reducers: {},
+  reducers: {
+    setPage: (state, action: PayloadAction<number>) => {
+      state.page = action.payload;
+    },
+  },
   //create
   extraReducers(builder) {
     builder.addCase(createOrderThunk.pending, (state) => {
@@ -165,6 +173,8 @@ const orderSlice = createSlice({
       state.error = null;
     });
     builder.addCase(getAllOrderThunk.fulfilled, (state, action) => {
+      console.log("ORDER RESPONSE:", action.payload);
+
       state.loading = false;
       state.page = action.payload.page;
       state.limit = action.payload.limit;
@@ -238,17 +248,25 @@ const orderSlice = createSlice({
       state.loading = true;
       state.error = null;
     });
+
     builder.addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
       state.loading = false;
-      state.selectedOrder = action.payload;
+
       const index = state.orders.findIndex(
         (order) => order.id === action.payload.id,
       );
+
       if (index !== -1) {
-        state.orders[index] = action.payload;
+        state.orders[index].status = action.payload.status;
       }
+
+      if (state.selectedOrder?.id === action.payload.id) {
+        state.selectedOrder.status = action.payload.status;
+      }
+
       state.error = null;
     });
+
     builder.addCase(updateOrderStatusThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message ?? "No order found";
@@ -272,4 +290,5 @@ const orderSlice = createSlice({
   },
 });
 
+export const { setPage } = orderSlice.actions;
 export default orderSlice.reducer;

@@ -18,9 +18,19 @@ export const getAllOrders = async (
   limit: number = 20,
   status?: OrderStatus,
 ): Promise<OrderListResponse> => {
+  console.log("SERVICE REQUEST:", {
+    search,
+    page,
+    limit,
+    status,
+  });
+
   const response = await api.get("/orders", {
     params: { search, page, limit, status },
   });
+
+  console.log("AXIOS URL:", response.config.url);
+  console.log("AXIOS PARAMS:", response.config.params);
 
   return response.data.data;
 };

@@ -52,7 +52,9 @@ const AdminSidebar = () => {
         <NavLink to="/admin/users" className={navLinkClass}>
           Users
         </NavLink>
-
+        <NavLink to="/admin/orders" className={navLinkClass}>
+          Order
+        </NavLink>
         <NavLink to="/admin/seo" className={navLinkClass}>
           SEO
         </NavLink>

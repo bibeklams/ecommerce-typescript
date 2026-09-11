@@ -251,6 +251,14 @@ export const getAllOrders = async (
     },
 
     include: {
+      user: {
+        select: {
+          email: true,
+        },
+      },
+
+      payments: true,
+
       orderItems: {
         include: {
           product: {

@@ -212,22 +212,6 @@ model Order {
   @@index([userId])
 }
 
-model WishlistItem {
-  id        Int     @id @default(autoincrement())
-  userId    Int?
-  productId Int
-  guestId   String?
-
-  user    User?   @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([productId])
-  @@index([guestId])
-}
-
 model OrderItem {
   id        Int @id @default(autoincrement())
   orderId   Int
@@ -244,6 +228,22 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+model WishlistItem {
+  id        Int     @id @default(autoincrement())
+  userId    Int?
+  productId Int
+  guestId   String?
+
+  user    User?   @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([productId])
+  @@index([guestId])
 }
 
 enum OrderStatus {

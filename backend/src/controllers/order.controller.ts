@@ -1,6 +1,6 @@
 import * as orderService from "../services/order.service.js";
 import type { Request, Response, NextFunction } from "express";
-
+import createError from "http-errors";
 export const createOrder = async (
   req: Request,
   res: Response,
@@ -60,7 +60,7 @@ export const getAllOrders = async (
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 20);
 
-    const orders = await orderService.getAllOrders(search, limit, page);
+    const orders = await orderService.getAllOrders(search, page, limit);
 
     res.status(200).json({
       success: true,
@@ -105,6 +105,7 @@ export const getOrderByID = async (
     next(error);
   }
 };
+
 export const updateOrderStatus = async (
   req: Request,
   res: Response,
@@ -113,16 +114,27 @@ export const updateOrderStatus = async (
   try {
     const orderId = Number(req.params.orderId);
     const status = req.body.status;
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      throw createError(400, "Invalid order ID");
+    }
+
+    if (!status) {
+      throw createError(400, "Order status is required");
+    }
+
     const result = await orderService.updateOrderStatus(orderId, status);
+
     res.status(200).json({
       success: true,
-      message: "updated successfully",
+      message: "Order status updated successfully",
       data: result,
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const cancelOrder = async (
   req: Request,
   res: Response,

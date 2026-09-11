@@ -23,6 +23,8 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
 import AdminUser from "../pages/admin/AdminUser";
+import AdminOrdersPage from "../pages/admin/order/AdminOrdersPage";
+import AdminOrderDetailsPage from "../pages/admin/order/AdminOrderDetailsPage";
 
 const AppRoutes = () => {
   return (
@@ -70,8 +72,9 @@ const AppRoutes = () => {
           <Route path="products" element={<AdminProduct />} />
 
           <Route path="categories" element={<AdminCategory />} />
-
+          <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="users" element={<AdminUser />} />
+          <Route path="orders/:orderId" element={<AdminOrderDetailsPage />} />
         </Route>
       </Route>
     </Routes>
