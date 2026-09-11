@@ -362,10 +362,18 @@ export const getOrderById = async (orderId: number) => {
       deletedAt: null,
     },
     include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      payments: true,
       orderItems: {
         include: {
           product: {
             include: {
+              category: true,
               gallery: {
                 include: {
                   images: true,

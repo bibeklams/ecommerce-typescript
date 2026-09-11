@@ -172,7 +172,7 @@ const OrderDetailsPage = () => {
 
                       <div className="mt-2 text-xs text-gray-500">
                         Rs. {Number(item.price).toLocaleString()} &times;{" "}
-                        {item.quantity}
+                        {item.quantity}cust
                       </div>
                     </div>
 
