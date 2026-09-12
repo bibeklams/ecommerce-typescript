@@ -21,6 +21,7 @@ model User {
   order        Order[]
   wishlistItem WishlistItem[]
   role         Role           @default(USER)
+  deletedAt    DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }

@@ -8,6 +8,7 @@ import cartItemRoutes from "./cartItem.routes.js";
 import cartRoutes from "./cart.routes.js";
 import orderRoutes from "./order.routes.js";
 import paymentRoutes from "./payment.routes.js";
+import dashboardRoutes from "./dashboard.routes.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/cart", cartRoutes);
 router.use("/cart", cartItemRoutes);
 router.use("/orders", orderRoutes);
 router.use("/payments", paymentRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;
