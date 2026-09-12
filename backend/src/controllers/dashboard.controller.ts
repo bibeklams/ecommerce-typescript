@@ -64,3 +64,19 @@ export const getSalesOverview = async (
     next(error);
   }
 };
+
+export const getLowStockProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await dashboardService.getLowStockProducts();
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

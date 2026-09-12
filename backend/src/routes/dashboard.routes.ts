@@ -18,6 +18,12 @@ router.get(
   adminOnly,
   dashboardController.getTopSellingProducts,
 );
+router.get(
+  "/low-stock",
+  protect,
+  adminOnly,
+  dashboardController.getLowStockProducts,
+);
 router.get("/sales", protect, adminOnly, dashboardController.getSalesOverview);
 
 export default router;

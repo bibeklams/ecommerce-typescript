@@ -1,5 +1,3 @@
-// getSalesOverview()
-
 import prisma from "../config/prisma.js";
 
 export const getDashboardStats = async () => {
@@ -59,20 +57,60 @@ export const getRecentOrders = async () => {
 };
 
 export const getTopSellingProducts = async () => {
-  const products = await prisma.orderItem.groupBy({
+  // 1. Find the top 5 products based on total quantity sold
+  const topProducts = await prisma.orderItem.groupBy({
     by: ["productId"],
+
     _sum: {
       quantity: true,
     },
+
     orderBy: {
       _sum: {
         quantity: "desc",
       },
     },
+
     take: 5,
   });
 
-  return products;
+  // 2. Get the product IDs
+  const productIds = topProducts.map((item) => item.productId);
+
+  // 3. Get product information
+  const products = await prisma.product.findMany({
+    where: {
+      id: {
+        in: productIds,
+      },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      gallery: {
+        include: {
+          images: true,
+        },
+      },
+    },
+  });
+
+  // 4. Combine product information with quantity sold
+  const result = topProducts.map((topProduct) => {
+    const product = products.find(
+      (product) => product.id === topProduct.productId,
+    );
+
+    return {
+      id: topProduct.productId,
+      name: product?.name ?? "Unknown Product",
+      quantitySold: topProduct._sum.quantity ?? 0,
+      gallery: product?.gallery ?? null,
+    };
+  });
+
+  return result;
 };
 export const getSalesOverview = async () => {
   const orders = await prisma.order.findMany({
@@ -113,4 +151,39 @@ export const getSalesOverview = async () => {
     date,
     revenue,
   }));
+};
+export const getLowStockProducts = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      deletedAt: null,
+      inventory: {
+        quantity: {
+          lte: 10,
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      inventory: {
+        select: {
+          quantity: true,
+        },
+      },
+      gallery: {
+        include: {
+          images: true,
+        },
+      },
+    },
+    orderBy: {
+      inventory: {
+        quantity: "asc",
+      },
+    },
+    take: 5,
+  });
+
+  return products;
 };
