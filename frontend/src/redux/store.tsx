@@ -9,6 +9,7 @@ import cartReducer from "./slices/cartSlice";
 import orderReducer from "./slices/orderSlice";
 import paymentReduce from "./slices/paymentSlice";
 import dashboardReducer from "./slices/dashboardSlice";
+import userReducer from "./slices/userSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -20,6 +21,7 @@ export const store = configureStore({
     order: orderReducer,
     payment: paymentReduce,
     dashboard: dashboardReducer,
+    user: userReducer,
   },
 });
 

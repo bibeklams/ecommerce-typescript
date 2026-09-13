@@ -19,7 +19,7 @@ import MyOrdersPage from "../pages/order/MyOrdersPage";
 import OrderDetailsPage from "../pages/order/OrderDetailsPage";
 
 import OrderSuccessPage from "../pages/order/OrderSuccessPage";
-import AdminDashboard from "../pages/admin/AdminDashboard";
+// import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminDashboardPage from "../pages/admin/dashboard/AdminDashboardPage";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
