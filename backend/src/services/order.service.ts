@@ -27,9 +27,6 @@ export const createOrder = async (data: {
     },
   });
 
-  console.log("Looking for userId:", data.userId);
-  console.log("Cart found:", cart);
-
   if (!cart) {
     throw createError(400, "No cart found");
   }
@@ -51,10 +48,14 @@ export const createOrder = async (data: {
       throw createError(400, `Invalid quantity for product ${item.productId}`);
     }
 
-    if (
-      item.product.inventory &&
-      item.quantity > item.product.inventory.quantity
-    ) {
+    if (!item.product.inventory) {
+      throw createError(
+        400,
+        `Inventory not found for product ${item.productId}`,
+      );
+    }
+
+    if (item.quantity > item.product.inventory.quantity) {
       throw createError(400, `Not enough stock for product ${item.productId}`);
     }
   }
@@ -64,7 +65,7 @@ export const createOrder = async (data: {
     return sum + Number(item.product.price) * item.quantity;
   }, 0);
 
-  // 4. Create order + order items + clear cart
+  // 4. Create order + order items + reduce inventory + clear cart
   const order = await prisma.$transaction(async (tx) => {
     // Create order
     const newOrder = await tx.order.create({
@@ -75,7 +76,7 @@ export const createOrder = async (data: {
         shippingAddress: data.shippingAddress,
         total,
 
-        // Create OrderItems
+        // Create order items
         orderItems: {
           create: cart.items.map((item) => ({
             productId: item.productId,
@@ -85,6 +86,7 @@ export const createOrder = async (data: {
           })),
         },
       },
+
       include: {
         orderItems: {
           include: {
@@ -94,7 +96,33 @@ export const createOrder = async (data: {
       },
     });
 
-    // Clear cart only after order + order items are created
+    // Reduce inventory
+    for (const item of cart.items) {
+      console.log("CART ITEM:", {
+        productId: item.productId,
+        quantity: item.quantity,
+        stockBefore: item.product.inventory?.quantity,
+      });
+
+      const updatedInventory = await tx.inventory.update({
+        where: {
+          productId: item.productId,
+        },
+        data: {
+          quantity: {
+            decrement: item.quantity,
+          },
+        },
+      });
+
+      console.log(
+        "Inventory updated:",
+        item.productId,
+        updatedInventory.quantity,
+      );
+    }
+
+    // Clear cart
     await tx.cartItem.deleteMany({
       where: {
         cartId: cart.id,
@@ -106,7 +134,12 @@ export const createOrder = async (data: {
 
   console.log("ORDER CREATED:", order);
 
-  // 5. Invalidate order cache
+  // 5. Invalidate product cache
+  for (const item of cart.items) {
+    await redis.del(`product:${item.productId}`);
+  }
+
+  // 6. Invalidate order cache
   await redis.del("order:count");
 
   const orderListKeys = await redis.keys("orders:*");

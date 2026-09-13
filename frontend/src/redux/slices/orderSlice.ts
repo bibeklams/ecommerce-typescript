@@ -139,8 +139,9 @@ const orderSlice = createSlice({
     });
     builder.addCase(createOrderThunk.fulfilled, (state, action) => {
       state.loading = false;
-      state.orders.push(action.payload);
+      state.orders.unshift(action.payload);
       state.count += 1;
+      state.totalOrders += 1;
       state.error = null;
     });
     builder.addCase(createOrderThunk.rejected, (state, action) => {
