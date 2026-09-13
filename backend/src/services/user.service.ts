@@ -6,7 +6,7 @@ import { Role } from "../generated/prisma/client.js";
 export const getAllUsers = async (
   search: string = "",
   page: number = 1,
-  limit: number = 20,
+  limit: number = 10,
 ) => {
   const skip = (page - 1) * limit;
 
@@ -80,7 +80,6 @@ export const getAllUsers = async (
 export const getSingleUser = async (userId: number) => {
   const cacheKey = `user:${userId}`;
 
-  // Check Redis cache
   const cache = await redis.get(cacheKey);
 
   if (cache) {
