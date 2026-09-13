@@ -66,9 +66,11 @@ export const getRecentOrders = async () => {
             select: {
               id: true,
               name: true,
-            },
-            gallery: {
-              images: true,
+              gallery: {
+                include: {
+                  images: true,
+                },
+              },
             },
           },
         },
