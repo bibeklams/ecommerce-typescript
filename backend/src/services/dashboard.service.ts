@@ -6,17 +6,41 @@ export const getDashboardStats = async () => {
       deletedAt: null,
     },
   });
+
   const products = await prisma.product.count({
     where: {
       deletedAt: null,
     },
   });
-  const orders = await prisma.order.count();
+
+  const orders = await prisma.order.count({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  const revenue = await prisma.order.aggregate({
+    where: {
+      deletedAt: null,
+      status: {
+        not: "CANCELLED",
+      },
+      payments: {
+        some: {
+          status: "PAID",
+        },
+      },
+    },
+    _sum: {
+      total: true,
+    },
+  });
 
   return {
     users,
     products,
     orders,
+    revenue: Number(revenue._sum.total ?? 0),
   };
 };
 
