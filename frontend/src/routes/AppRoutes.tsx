@@ -20,6 +20,7 @@ import OrderDetailsPage from "../pages/order/OrderDetailsPage";
 
 import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminDashboardPage from "../pages/admin/dashboard/AdminDashboardPage";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
 import AdminUser from "../pages/admin/AdminUser";
@@ -67,7 +68,7 @@ const AppRoutes = () => {
 
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<AdminDashboardPage />} />
           <Route path="products" element={<AdminProduct />} />
           <Route path="categories" element={<AdminCategory />} />
           <Route path="orders" element={<AdminOrdersPage />} />

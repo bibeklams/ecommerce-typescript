@@ -8,6 +8,7 @@ import wishlistReducer from "./slices/wishlistSlice";
 import cartReducer from "./slices/cartSlice";
 import orderReducer from "./slices/orderSlice";
 import paymentReduce from "./slices/paymentSlice";
+import dashboardReducer from "./slices/dashboardSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -18,6 +19,7 @@ export const store = configureStore({
     cart: cartReducer,
     order: orderReducer,
     payment: paymentReduce,
+    dashboard: dashboardReducer,
   },
 });
 
