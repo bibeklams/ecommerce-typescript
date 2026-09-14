@@ -1,6 +1,6 @@
 import prisma from "../config/prisma.js";
 import createError from "http-errors";
-import { OrderStatus } from "../generated/prisma/client.js";
+import { OrderStatus, PaymentStatus } from "../generated/prisma/client.js";
 import redis from "../config/redis.js";
 
 export const createOrder = async (data: {
@@ -258,30 +258,49 @@ export const getAllOrders = async (
   search: string = "",
   page: number = 1,
   limit: number = 20,
+  status?: OrderStatus,
+  paymentStatus?: PaymentStatus,
+  sortOrder: "asc" | "desc" = "desc",
 ) => {
-  const cacheKey = `orders:search:${search}:page:${page}:limit:${limit}`;
+  const cacheKey = `orders:search:${search}:page:${page}:limit:${limit}:status:${status ?? "all"}:paymentStatus:${paymentStatus ?? "all"}:sort:${sortOrder}`;
+
   const cache = await redis.get(cacheKey);
+
   if (cache) {
     return JSON.parse(cache);
   }
+
   const skip = (page - 1) * limit;
 
-  const orders = await prisma.order.findMany({
-    where: {
-      deletedAt: null,
+  const where = {
+    deletedAt: null,
 
-      // Search by product name
-      orderItems: {
+    ...(status && {
+      status,
+    }),
+
+    ...(paymentStatus && {
+      payments: {
         some: {
-          product: {
-            name: {
-              contains: search,
-              mode: "insensitive",
-            },
+          status: paymentStatus,
+        },
+      },
+    }),
+
+    orderItems: {
+      some: {
+        product: {
+          name: {
+            contains: search,
+            mode: "insensitive" as const,
           },
         },
       },
     },
+  };
+
+  const orders = await prisma.order.findMany({
+    where,
 
     include: {
       user: {
@@ -307,32 +326,20 @@ export const getAllOrders = async (
       },
     },
 
-    // Pagination
     skip,
     take: limit,
 
-    // Newest orders first
     orderBy: {
-      createdAt: "desc",
+      createdAt: sortOrder,
     },
   });
-  const totalOrders = await prisma.order.count({
-    where: {
-      deletedAt: null,
 
-      orderItems: {
-        some: {
-          product: {
-            name: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-        },
-      },
-    },
+  const totalOrders = await prisma.order.count({
+    where,
   });
+
   const totalPages = Math.ceil(totalOrders / limit);
+
   const result = {
     orders,
     page,
@@ -341,10 +348,8 @@ export const getAllOrders = async (
     totalPages,
   };
 
-  // 8. Store result in Redis for 5 minutes
   await redis.set(cacheKey, JSON.stringify(result), "EX", 300);
 
-  // 9. Return result
   return result;
 };
 

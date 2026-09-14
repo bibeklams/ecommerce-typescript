@@ -1,6 +1,7 @@
 import api from "./api";
 
 import type { Order, OrderStatus, OrderListResponse } from "../types/order";
+import type { PaymentStatus } from "../types/payment";
 
 export const createOrder = async (data: {
   shippingName: string;
@@ -17,20 +18,19 @@ export const getAllOrders = async (
   page: number = 1,
   limit: number = 20,
   status?: OrderStatus,
+  paymentStatus?: PaymentStatus,
+  sortOrder: "asc" | "desc" = "desc",
 ): Promise<OrderListResponse> => {
-  // console.log("SERVICE REQUEST:", {
-  //   search,
-  //   page,
-  //   limit,
-  //   status,
-  // });
-
   const response = await api.get("/orders", {
-    params: { search, page, limit, status },
+    params: {
+      search,
+      page,
+      limit,
+      status,
+      paymentStatus,
+      sortOrder,
+    },
   });
-
-  // console.log("AXIOS URL:", response.config.url);
-  // console.log("AXIOS PARAMS:", response.config.params);
 
   return response.data.data;
 };

@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { getAllOrderThunk, setPage } from "../../../redux/slices/orderSlice";
-
 import AdminOrderTable from "../../../components/admin/order/AdminOrderTable";
 import PageNumber from "../../../components/common/PageNumber";
-
 import type { OrderStatus } from "../../../types/order";
+import type { PaymentStatus } from "../../../types/payment";
 
 const AdminOrdersPage = () => {
   const dispatch = useAppDispatch();
@@ -14,30 +12,25 @@ const AdminOrdersPage = () => {
   const { page, limit, totalPages } = useAppSelector((state) => state.order);
 
   const [search, setSearch] = useState("");
+
   const [orderStatus, setOrderStatus] = useState<OrderStatus | "">("");
 
-  // UI only - backend not connected yet
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("desc");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | "">("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
-    console.log("ADMIN ORDER EFFECT:", {
-      search,
-      page,
-      limit,
-      orderStatus,
-    });
-
     dispatch(
       getAllOrderThunk({
         search,
         page,
         limit,
         status: orderStatus || undefined,
+        paymentStatus: paymentStatus || undefined,
+        sortOrder,
       }),
     );
-  }, [dispatch, search, page, limit, orderStatus]);
+  }, [dispatch, search, page, limit, orderStatus, paymentStatus, sortOrder]);
+
   const handlePageChange = (newPage: number) => {
     dispatch(setPage(newPage));
   };
@@ -54,7 +47,7 @@ const AdminOrdersPage = () => {
 
       {/* Filters */}
       <div className="rounded-lg bg-white p-4 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Search */}
           <input
             type="text"
@@ -63,7 +56,6 @@ const AdminOrdersPage = () => {
             placeholder="Search orders..."
             className="rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
-
           {/* Order Status */}
           <select
             value={orderStatus}
@@ -80,11 +72,13 @@ const AdminOrdersPage = () => {
             <option value="DELIVERED">Delivered</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
-
           {/* Payment Status */}
+          ```tsx
           <select
             value={paymentStatus}
-            onChange={(event) => setPaymentStatus(event.target.value)}
+            onChange={(event) =>
+              setPaymentStatus(event.target.value as PaymentStatus | "")
+            }
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
             <option value="">All Payment Status</option>
@@ -93,26 +87,17 @@ const AdminOrdersPage = () => {
             <option value="FAILED">Failed</option>
             <option value="REFUNDED">Refunded</option>
           </select>
-
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="createdAt">Order Date</option>
-            <option value="total">Total Price</option>
-            <option value="userName">Customer Name</option>
-          </select>
-
+          ```
           {/* Sort Order */}
           <select
             value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            onChange={(event) =>
+              setSortOrder(event.target.value as "asc" | "desc")
+            }
           >
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
+            {" "}
+            <option value="desc">Newest First</option>{" "}
+            <option value="asc">Oldest First</option>{" "}
           </select>
         </div>
       </div>

@@ -4,6 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import type { Order, OrderListResponse, OrderStatus } from "../../types/order";
+import type { PaymentStatus } from "../../types/payment";
 import {
   createOrder,
   getMyOrderById,
@@ -69,6 +70,8 @@ export const getAllOrderThunk = createAsyncThunk<
     page?: number;
     limit?: number;
     status?: OrderStatus;
+    paymentStatus?: PaymentStatus;
+    sortOrder?: "asc" | "desc";
   }
 >("orders/getAllOrders", async (params) => {
   const response = await getAllOrders(
@@ -76,6 +79,8 @@ export const getAllOrderThunk = createAsyncThunk<
     params.page,
     params.limit,
     params.status,
+    params.paymentStatus,
+    params.sortOrder,
   );
 
   return response;

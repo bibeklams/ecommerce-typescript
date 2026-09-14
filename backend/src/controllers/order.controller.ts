@@ -1,6 +1,7 @@
 import * as orderService from "../services/order.service.js";
 import type { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
+import type { OrderStatus, PaymentStatus } from "../generated/prisma/enums.js";
 export const createOrder = async (
   req: Request,
   res: Response,
@@ -60,11 +61,28 @@ export const getAllOrders = async (
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 20);
 
-    const orders = await orderService.getAllOrders(search, page, limit);
+    const status = req.query.status
+      ? (String(req.query.status) as OrderStatus)
+      : undefined;
+
+    const paymentStatus = req.query.paymentStatus
+      ? (String(req.query.paymentStatus) as PaymentStatus)
+      : undefined;
+
+    const sortOrder = req.query.sortOrder === "asc" ? "asc" : "desc";
+
+    const result = await orderService.getAllOrders(
+      search,
+      page,
+      limit,
+      status,
+      paymentStatus,
+      sortOrder,
+    );
 
     res.status(200).json({
       success: true,
-      data: orders,
+      data: result,
     });
   } catch (error) {
     next(error);
