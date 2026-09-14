@@ -23,7 +23,9 @@ import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 import AdminDashboardPage from "../pages/admin/dashboard/AdminDashboardPage";
 import AdminProduct from "../pages/admin/AdminProduct";
 import AdminCategory from "../pages/admin/AdminCategory";
-import AdminUser from "../pages/admin/AdminUser";
+// import AdminUser from "../pages/admin/AdminUser";
+import AdminUsersPage from "../pages/admin/user/AdminUsersPage";
+import AdminUserDetailsPage from "../pages/admin/user/AdminUserDetailsPage";
 import AdminOrdersPage from "../pages/admin/order/AdminOrdersPage";
 import AdminOrderDetailsPage from "../pages/admin/order/AdminOrderDetailsPage";
 
@@ -72,7 +74,8 @@ const AppRoutes = () => {
           <Route path="products" element={<AdminProduct />} />
           <Route path="categories" element={<AdminCategory />} />
           <Route path="orders" element={<AdminOrdersPage />} />
-          <Route path="users" element={<AdminUser />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:userId" element={<AdminUserDetailsPage />} />
           <Route path="orders/:orderId" element={<AdminOrderDetailsPage />} />
         </Route>
       </Route>

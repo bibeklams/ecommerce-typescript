@@ -20,7 +20,7 @@ interface UserState {
   page: number;
   limit: number;
   totalPages: number;
-
+  total: number;
   loading: boolean;
   error: string | null;
 }
@@ -32,7 +32,7 @@ const initialState: UserState = {
   page: 1,
   limit: 10,
   totalPages: 0,
-
+  total: 0,
   loading: false,
   error: null,
 };
@@ -74,6 +74,7 @@ const userSlice = createSlice({
       state.users = action.payload.users;
       state.page = action.payload.page;
       state.totalPages = action.payload.totalPages;
+      state.total = action.payload.total;
       state.limit = action.payload.limit;
       state.error = null;
     });

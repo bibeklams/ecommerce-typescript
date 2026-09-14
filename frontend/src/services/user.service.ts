@@ -23,7 +23,8 @@ export const getSingleUser = async (userId: number): Promise<User> => {
   return response.data.data;
 };
 
-export const deleteUser = async (userId: number) => {
+export const deleteUser = async (userId: number): Promise<User> => {
   const response = await api.delete(`/users/${userId}`);
+
   return response.data.data;
 };
