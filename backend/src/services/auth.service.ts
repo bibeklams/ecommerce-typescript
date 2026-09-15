@@ -21,29 +21,53 @@ export const register = async (data: {
     },
   });
 
-  if (existingUser) {
+  // User already exists
+  if (existingUser && existingUser.deletedAt === null) {
     throw createError(400, "User already exists");
   }
 
-  // Hash password before storing it
+  // Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      password: hashedPassword,
-    },
-  });
+  let user;
+
+  // Soft-deleted user exists → restore account
+  if (existingUser && existingUser.deletedAt !== null) {
+    user = await prisma.user.update({
+      where: {
+        id: existingUser.id,
+      },
+      data: {
+        name: data.name,
+        password: hashedPassword,
+        deletedAt: null,
+        emailVerified: false,
+      },
+    });
+  } else {
+    // No user exists → create new account
+    user = await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: hashedPassword,
+      },
+    });
+  }
 
   // Remove password before returning user
   const { password, ...safeUser } = user;
 
+  // Generate OTP
   const otp = generateOtp();
 
+  // Hash OTP before storing it in Redis
   const hashOtp = await bcrypt.hash(otp, 10);
+
+  // Store OTP hash for 5 minutes
   await redis.set(`email-verification:${user.id}`, hashOtp, "EX", 300);
+
+  // Send OTP email
   await sendVerificationEmail({
     email: user.email,
     name: user.name,

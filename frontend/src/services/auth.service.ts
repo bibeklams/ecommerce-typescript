@@ -6,12 +6,18 @@ const refreshApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
+
 export const register = async (data: {
   name: string;
   email: string;
   password: string;
 }) => {
   const response = await api.post("/auth/register", data);
+  return response.data;
+};
+
+export const emailVerify = async (data: { email: string; otp: string }) => {
+  const response = await api.post("/auth/verify-email", data);
   return response.data;
 };
 

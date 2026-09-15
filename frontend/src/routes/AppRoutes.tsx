@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
 
+import VerifyEmailPage from "../components/auth/VerifyEmailPage";
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
 
@@ -48,6 +49,7 @@ const AppRoutes = () => {
         <Route path="/cart" element={<CartPage />} />
 
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         <Route path="/register" element={<RegisterPage />} />
       </Route>

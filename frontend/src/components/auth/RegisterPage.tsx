@@ -45,11 +45,15 @@ const RegisterPage = () => {
     const result = await dispatch(register(values));
 
     if (register.fulfilled.match(result)) {
-      toast.success("Registration successful");
+      toast.success("Registration successful. OTP sent to your email.");
 
       resetForm();
 
-      navigate("/login");
+      navigate("/verify-email", {
+        state: {
+          email: values.email,
+        },
+      });
     }
   };
 

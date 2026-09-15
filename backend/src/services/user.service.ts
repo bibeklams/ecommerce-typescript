@@ -145,5 +145,7 @@ export const deleteUser = async (userId: number) => {
     await redis.del(...userKeys);
   }
 
-  return removeUser;
+  const { password, ...safeUser } = removeUser;
+
+  return safeUser;
 };
