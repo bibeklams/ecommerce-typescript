@@ -73,7 +73,6 @@ const AdminOrdersPage = () => {
             <option value="CANCELLED">Cancelled</option>
           </select>
           {/* Payment Status */}
-          ```tsx
           <select
             value={paymentStatus}
             onChange={(event) =>
@@ -87,7 +86,6 @@ const AdminOrdersPage = () => {
             <option value="FAILED">Failed</option>
             <option value="REFUNDED">Refunded</option>
           </select>
-          ```
           {/* Sort Order */}
           <select
             value={sortOrder}

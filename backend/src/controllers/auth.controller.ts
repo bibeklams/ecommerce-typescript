@@ -1,6 +1,13 @@
 import * as authService from "../services/auth.service.js";
 import type { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
+
+/**
+ *
+ * @param req this is a request
+ * @param res
+ * @param next
+ */
 export const register = async (
   req: Request,
   res: Response,
@@ -20,6 +27,20 @@ export const register = async (
       message: "User registered successfully",
       data: result,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body;
+    const { otp } = req.body;
+    res.send(await authService.verifyEmail(email, otp));
   } catch (error) {
     next(error);
   }
@@ -120,7 +141,7 @@ export const profile = async (
 
     const { password: _password, ...safeUser } = user;
 
-    res.status(200).json({
+    res.json({
       success: true,
       user: safeUser,
     });

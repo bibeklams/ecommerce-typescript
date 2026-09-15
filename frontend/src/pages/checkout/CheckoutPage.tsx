@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import CheckoutForm from "../../components/checkout/CheckoutForm";
+
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+
 import { getCartThunk } from "../../redux/slices/cartSlice";
 import { createOrderThunk } from "../../redux/slices/orderSlice";
 import { createPaymentThunk } from "../../redux/slices/paymentSlice";
+
 import { initiateEsewaPayment } from "../../services/payment.service";
+
 import type { CheckoutValues } from "../../types/checkout";
 import type { EsewaPaymentData } from "../../types/payment";
-
-import { useNavigate } from "react-router-dom";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -18,20 +22,27 @@ const CheckoutPage = () => {
 
   const { items, loading, error } = useAppSelector((state) => state.cart);
 
-  // Get latest cart
+  /*
+   * Get latest cart
+   */
   useEffect(() => {
     dispatch(getCartThunk());
   }, [dispatch]);
 
-  // Submit eSewa payment form
+  /*
+   * Submit signed payment data to eSewa
+   */
   const submitToEsewa = (paymentData: EsewaPaymentData) => {
     const form = document.createElement("form");
 
     form.method = "POST";
-
     form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
 
     Object.entries(paymentData).forEach(([key, value]) => {
+      if (key === "orderId") {
+        return;
+      }
+
       const input = document.createElement("input");
 
       input.type = "hidden";
@@ -42,7 +53,6 @@ const CheckoutPage = () => {
     });
 
     document.body.appendChild(form);
-
     form.submit();
   };
 
@@ -50,9 +60,11 @@ const CheckoutPage = () => {
     setIsSubmitting(true);
 
     try {
-      // =====================================================
-      // 1. CASH ON DELIVERY
-      // =====================================================
+      /*
+       * =====================================================
+       * 1. CASH ON DELIVERY
+       * =====================================================
+       */
 
       if (values.paymentMethod === "CASH_ON_DELIVERY") {
         const order = await dispatch(
@@ -63,8 +75,6 @@ const CheckoutPage = () => {
           }),
         ).unwrap();
 
-        console.log("Order created:", order);
-
         const payment = await dispatch(
           createPaymentThunk({
             orderId: order.id,
@@ -72,38 +82,35 @@ const CheckoutPage = () => {
           }),
         ).unwrap();
 
-        console.log("Payment created:", payment);
+        console.log("COD payment created:", payment);
 
-        // Later:
         navigate(`/order-success/${order.id}`);
 
         return;
       }
 
-      // =====================================================
-      // 2. ESEWA
-      // =====================================================
+      /*
+       * =====================================================
+       * 2. ESEWA
+       * =====================================================
+       *
+       * Do NOT create the order here.
+       * Do NOT create the payment here.
+       *
+       * Backend does both and returns signed eSewa data.
+       */
 
       if (values.paymentMethod === "ESEWA") {
-        /*
-         * IMPORTANT:
-         *
-         * We DO NOT create an order here.
-         * We DO NOT create a payment here.
-         *
-         * Backend creates a pending eSewa payment attempt
-         * and returns the eSewa form data.
-         */
-
         const paymentData = await initiateEsewaPayment({
           shippingName: values.shippingName,
           shippingPhone: values.shippingPhone,
           shippingAddress: values.shippingAddress,
         });
 
-        console.log("eSewa payment data:", paymentData);
+        console.log("eSewa payment initiated:", paymentData);
 
         submitToEsewa(paymentData);
+
         return;
       }
     } catch (error) {
@@ -113,9 +120,11 @@ const CheckoutPage = () => {
     }
   };
 
-  // =====================================================
-  // LOADING
-  // =====================================================
+  /*
+   * =====================================================
+   * LOADING
+   * =====================================================
+   */
 
   if (loading) {
     return (
@@ -125,9 +134,11 @@ const CheckoutPage = () => {
     );
   }
 
-  // =====================================================
-  // ERROR
-  // =====================================================
+  /*
+   * =====================================================
+   * ERROR
+   * =====================================================
+   */
 
   if (error) {
     return (
@@ -137,9 +148,11 @@ const CheckoutPage = () => {
     );
   }
 
-  // =====================================================
-  // EMPTY CART
-  // =====================================================
+  /*
+   * =====================================================
+   * EMPTY CART
+   * =====================================================
+   */
 
   if (items.length === 0) {
     return (
@@ -149,9 +162,11 @@ const CheckoutPage = () => {
     );
   }
 
-  // =====================================================
-  // PAGE
-  // =====================================================
+  /*
+   * =====================================================
+   * PAGE
+   * =====================================================
+   */
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
@@ -159,9 +174,7 @@ const CheckoutPage = () => {
         <h1 className="mb-8 text-3xl font-bold text-gray-900">Checkout</h1>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* =========================
-              PRODUCTS
-          ========================== */}
+          {/* Products */}
 
           <section className="rounded-xl bg-white p-6 shadow-md">
             <h2 className="mb-6 text-xl font-semibold text-gray-800">
@@ -174,8 +187,6 @@ const CheckoutPage = () => {
                   key={item.id}
                   className="flex gap-4 rounded-lg border border-gray-200 p-4"
                 >
-                  {/* Product Image */}
-
                   {item.product.gallery?.images?.[0]?.url ? (
                     <img
                       src={item.product.gallery.images[0].url}
@@ -187,8 +198,6 @@ const CheckoutPage = () => {
                       No image
                     </div>
                   )}
-
-                  {/* Product Information */}
 
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">
@@ -212,9 +221,7 @@ const CheckoutPage = () => {
             </div>
           </section>
 
-          {/* =========================
-              CHECKOUT FORM
-          ========================== */}
+          {/* Checkout Form */}
 
           <section>
             <CheckoutForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />

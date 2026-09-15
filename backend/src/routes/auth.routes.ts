@@ -13,7 +13,7 @@ import { registerSchema, loginSchema } from "../validation/auth.validation.js";
 const router = express.Router();
 
 router.post("/register", validation(registerSchema), authController.register);
-
+router.post("/verify-email", authController.verifyEmail);
 router.post(
   "/login",
   validation(loginSchema),

@@ -13,17 +13,19 @@ enum Role {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  name         String
-  email        String         @unique
-  password     String
-  cart         Cart?
-  order        Order[]
-  wishlistItem WishlistItem[]
-  role         Role           @default(USER)
-  deletedAt    DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  password      String
+  cart          Cart?
+  order         Order[]
+  wishlistItem  WishlistItem[]
+  role          Role           @default(USER)
+  emailVerified Boolean        @default(false)
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Category {
@@ -277,14 +279,16 @@ enum RefundStatus {
 }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  orderId       Int           @unique
-  amount        Decimal
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  transactionId String?
-  refundStatus  RefundStatus  @default(NONE)
-  order         Order         @relation(fields: [orderId], references: [id])
+  id              Int           @id @default(autoincrement())
+  orderId         Int           @unique
+  amount          Decimal
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  transactionUuid String?       @unique
+  transactionId   String?
+  refundStatus    RefundStatus  @default(NONE)
+
+  order Order @relation(fields: [orderId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

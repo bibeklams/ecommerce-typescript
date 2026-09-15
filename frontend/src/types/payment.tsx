@@ -21,7 +21,9 @@ export interface EsewaPaymentData {
   failure_url: string;
   signed_field_names: string;
   signature: string;
+  orderId: number;
 }
+
 export interface PaymentListResponse {
   payments: Payment[];
   page: number;

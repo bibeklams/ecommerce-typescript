@@ -29,9 +29,10 @@ export const createPayment = async (
     throw createError(404, "Order not found");
   }
 
-  const existingPayment = await prisma.payment.findUnique({
+  const existingPayment = await prisma.payment.findFirst({
     where: {
       orderId: order.id,
+      method,
     },
   });
 
@@ -249,95 +250,113 @@ export const getAllPayments = async (
 
 export const initiateEsewaPayment = async (
   userId: number,
-  data: EsewaCheckoutData,
+  data: {
+    shippingName: string;
+    shippingPhone: string;
+    shippingAddress: string;
+  },
 ) => {
   const cart = await prisma.cart.findUnique({
-    where: {
-      userId,
-    },
+    where: { userId },
     include: {
-      items: {
-        include: {
-          product: {
-            include: {
-              inventory: true,
-            },
-          },
-        },
-      },
+      items: { include: { product: { include: { inventory: true } } } },
     },
   });
-
   if (!cart) {
-    throw createError(400, "No cart found");
+    throw createError(400, "Cart not found");
   }
-
   if (cart.items.length === 0) {
     throw createError(400, "Cart is empty");
   }
-
-  // Validate cart before sending the customer to eSewa
-  for (const item of cart.items) {
+  /* * 2. Validate cart products and stock */ for (const item of cart.items) {
     if (item.product.deletedAt !== null) {
       throw createError(
         400,
         `Product ${item.productId} is no longer available`,
       );
     }
-
     if (item.quantity <= 0) {
       throw createError(400, `Invalid quantity for product ${item.productId}`);
     }
-
-    if (
-      item.product.inventory &&
-      item.quantity > item.product.inventory.quantity
-    ) {
+    if (!item.product.inventory) {
+      throw createError(
+        400,
+        `Inventory not found for product ${item.productId}`,
+      );
+    }
+    if (item.quantity > item.product.inventory.quantity) {
       throw createError(400, `Not enough stock for product ${item.productId}`);
     }
   }
-
-  const totalAmount = cart.items.reduce((sum, item) => {
+  /* * 3. Calculate total */ const total = cart.items.reduce((sum, item) => {
     return sum + Number(item.product.price) * item.quantity;
   }, 0);
-
-  const productCode = process.env.ESEWA_PRODUCT_CODE;
-  const secretKey = process.env.ESEWA_SECRET_KEY;
-  const successUrl = process.env.ESEWA_SUCCESS_URL;
-  const failureUrl = process.env.ESEWA_FAILURE_URL;
-
-  if (!productCode || !secretKey || !successUrl || !failureUrl) {
+  /* * eSewa required charges. * We don't use tax/service/delivery charges currently. */ const amount =
+    total;
+  const taxAmount = 0;
+  const serviceCharge = 0;
+  const deliveryCharge = 0;
+  const totalAmount = amount + taxAmount + serviceCharge + deliveryCharge;
+  /* * 4. Create unique transaction UUID * * Only alphanumeric characters and hyphens. */ const transactionUuid = `ORDER-${Date.now()}-${userId}`;
+  /* * 5. Create order + pending payment */ const result =
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          userId,
+          shippingName: data.shippingName,
+          shippingPhone: data.shippingPhone,
+          shippingAddress: data.shippingAddress,
+          total: totalAmount,
+          orderItems: {
+            create: cart.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: Number(item.product.price),
+              total: Number(item.product.price) * item.quantity,
+            })),
+          },
+        },
+      });
+      const payment = await tx.payment.create({
+        data: {
+          orderId: order.id,
+          amount: totalAmount,
+          method: PaymentMethod.ESEWA,
+          status: PaymentStatus.PENDING,
+          refundStatus: RefundStatus.NONE,
+          transactionUuid,
+        },
+      });
+      return { order, payment };
+    });
+  /* * 6. eSewa UAT configuration */ const productCode =
+    process.env.ESEWA_PRODUCT_CODE!;
+  const secretKey = process.env.ESEWA_SECRET_KEY!;
+  if (!productCode || !secretKey) {
     throw createError(500, "eSewa configuration is missing");
   }
-
-  const transactionUuid = `cart-${userId}-${Date.now()}`;
-
+  /* * 7. Fields required by eSewa for signing * * IMPORTANT: * The order must remain exactly: * * total_amount * transaction_uuid * product_code */ const signedFieldNames =
+    "total_amount,transaction_uuid,product_code";
   const message =
     `total_amount=${totalAmount},` +
     `transaction_uuid=${transactionUuid},` +
     `product_code=${productCode}`;
-
-  const signature = crypto
+  /* * 8. Generate HMAC-SHA256 signature */ const signature = crypto
     .createHmac("sha256", secretKey)
     .update(message)
     .digest("base64");
-
-  return {
-    amount: totalAmount,
-    tax_amount: 0,
+  /* * 9. Return data required by frontend * * Frontend will POST these fields to eSewa. */ return {
+    amount,
+    tax_amount: taxAmount,
     total_amount: totalAmount,
     transaction_uuid: transactionUuid,
     product_code: productCode,
-    product_service_charge: 0,
-    product_delivery_charge: 0,
-    success_url: successUrl,
-    failure_url: failureUrl,
-    signed_field_names: "total_amount,transaction_uuid,product_code",
+    product_service_charge: serviceCharge,
+    product_delivery_charge: deliveryCharge,
+    success_url: `${process.env.ESEWA_SUCCESS_URL}`,
+    failure_url: `${process.env.ESEWA_FAILURE_URL}`,
+    signed_field_names: signedFieldNames,
     signature,
-
-    // You need these after eSewa returns
-    shippingName: data.shippingName,
-    shippingPhone: data.shippingPhone,
-    shippingAddress: data.shippingAddress,
+    orderId: result.order.id,
   };
 };
