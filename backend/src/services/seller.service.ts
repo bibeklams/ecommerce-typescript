@@ -53,16 +53,35 @@ export const createSeller = async (userId: number) => {
 };
 
 export const approveSeller = async (userId: number) => {
-  const user = await prisma.user.findFirst({
+  const user = await prisma.user.findUnique({
     where: {
       id: userId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      sellerStatus: true,
       emailVerified: true,
-      sellerStatus: SellerStatus.PENDING,
     },
   });
+
   if (!user) {
-    throw createError(400, "No user found");
+    throw createError(400, "User does not exist");
   }
+
+  if (!user.emailVerified) {
+    throw createError(400, "User email is not verified");
+  }
+
+  if (user.sellerStatus !== SellerStatus.PENDING) {
+    throw createError(
+      400,
+      `Seller status is ${user.sellerStatus}, expected PENDING`,
+    );
+  }
+
   const approveSellerRequest = await prisma.user.update({
     where: {
       id: user.id,
@@ -80,10 +99,12 @@ export const approveSeller = async (userId: number) => {
       emailVerified: true,
     },
   });
+
   await sendSellerApprovedEmail({
     email: user.email,
     name: user.name,
   });
+
   return approveSellerRequest;
 };
 

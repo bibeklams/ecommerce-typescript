@@ -1,6 +1,8 @@
 import { useEffect } from "react";
+
 import { useAppDispatch, useAppSelector } from "../../../../redux/hooks";
 import { getAllUsersThunk } from "../../../../redux/slices/userSlice";
+
 import SellerRequestTable from "../../../../components/admin/seller request/SellerRequestTable";
 
 const SellerRequests = () => {
@@ -8,26 +10,21 @@ const SellerRequests = () => {
 
   const { users, loading, error } = useAppSelector((state) => state.user);
 
-  useEffect(() => {
+  const fetchUsers = () => {
     dispatch(
       getAllUsersThunk({
         page: 1,
         limit: 10,
       }),
     );
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, [dispatch]);
-  console.log("USERS:", users);
+
   const sellerRequests = users.filter(
     (user) => user.sellerStatus === "PENDING",
-  );
-  console.log(
-    "USER SELLER STATUSES:",
-    users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      sellerStatus: user.sellerStatus,
-    })),
   );
 
   return (
@@ -43,6 +40,7 @@ const SellerRequests = () => {
           users={sellerRequests}
           loading={loading}
           error={error}
+          onRequestUpdated={fetchUsers}
         />
       </main>
     </div>

@@ -21,6 +21,10 @@ export const approveSeller = async (
 ) => {
   try {
     const userId = Number(req.params.userId);
+
+    console.log("req.params:", req.params);
+    console.log("Approving user ID:", userId);
+
     res.send(await sellerService.approveSeller(userId));
   } catch (error) {
     next(error);

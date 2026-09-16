@@ -1,21 +1,26 @@
 import { useAppDispatch } from "../../../redux/hooks";
+
 import {
   approveSellerThunk,
   rejectSellerThunk,
 } from "../../../redux/slices/sellerSlice";
+
 import type { User } from "../../../types/user";
+
 import toast from "react-hot-toast";
 
 interface SellerRequestTableProps {
   users: User[];
   loading: boolean;
   error: string | null;
+  onRequestUpdated: () => void;
 }
 
 const SellerRequestTable = ({
   users,
   loading,
   error,
+  onRequestUpdated,
 }: SellerRequestTableProps) => {
   const dispatch = useAppDispatch();
 
@@ -24,6 +29,8 @@ const SellerRequestTable = ({
 
     if (approveSellerThunk.fulfilled.match(result)) {
       toast.success("Seller approved successfully");
+
+      onRequestUpdated();
     } else {
       toast.error(result.error.message ?? "Failed to approve seller");
     }
@@ -34,6 +41,8 @@ const SellerRequestTable = ({
 
     if (rejectSellerThunk.fulfilled.match(result)) {
       toast.success("Seller request rejected");
+
+      onRequestUpdated();
     } else {
       toast.error(result.error.message ?? "Failed to reject seller request");
     }
