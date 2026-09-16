@@ -6,18 +6,23 @@ import { logout } from "../redux/slices/authSlice";
 import { useEffect } from "react";
 import { countWishlistThunk } from "../redux/slices/wishlistSlice";
 import { countCartItemThunk } from "../redux/slices/cartSlice";
+import { applyForSellerThunk } from "../redux/slices/sellerSlice";
+
 const Header = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const { user, loading } = useAppSelector((state) => state.auth);
-
   const { count } = useAppSelector((state) => state.wishlist);
   const { count: cartCount } = useAppSelector((state) => state.cart);
+
+  const sellerLoading = useAppSelector((state) => state.seller.loading);
+
   useEffect(() => {
     dispatch(countWishlistThunk());
     dispatch(countCartItemThunk());
   }, [dispatch]);
+
   const handleLogout = async () => {
     const result = await dispatch(logout());
 
@@ -26,6 +31,18 @@ const Header = () => {
       navigate("/login");
     } else {
       toast.error("Logout failed");
+    }
+  };
+
+  const handleBecomeSeller = async () => {
+    const result = await dispatch(applyForSellerThunk());
+
+    if (applyForSellerThunk.fulfilled.match(result)) {
+      toast.success("Seller application submitted successfully");
+    } else {
+      toast.error(
+        result.error.message ?? "Failed to submit seller application",
+      );
     }
   };
 
@@ -51,13 +68,6 @@ const Header = () => {
           </Link>
 
           <Link
-            to="/search"
-            className="group relative py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
-          >
-            Search
-            <span className="absolute bottom-0 left-0 h-px w-0 bg-gray-900 transition-all duration-200 group-hover:w-full" />
-          </Link>
-          <Link
             to="/wishlist"
             className="group relative flex items-center gap-1.5 py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
           >
@@ -75,6 +85,7 @@ const Header = () => {
 
             <span className="absolute bottom-0 left-0 h-px w-0 bg-gray-900 transition-all duration-200 group-hover:w-full" />
           </Link>
+
           <Link
             to="/cart"
             className="group relative flex items-center gap-1.5 py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
@@ -93,6 +104,7 @@ const Header = () => {
 
             <span className="absolute bottom-0 left-0 h-px w-0 bg-gray-900 transition-all duration-200 group-hover:w-full" />
           </Link>
+
           <Link
             to="/my-order"
             className="group relative py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
@@ -100,6 +112,31 @@ const Header = () => {
             My Order
             <span className="absolute bottom-0 left-0 h-px w-0 bg-gray-900 transition-all duration-200 group-hover:w-full" />
           </Link>
+
+          {/* Seller Navigation */}
+
+          {user?.role === "SELLER" ? (
+            <Link
+              to="/seller/dashboard"
+              className="group relative py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
+            >
+              Seller Dashboard
+              <span className="absolute bottom-0 left-0 h-px w-0 bg-gray-900 transition-all duration-200 group-hover:w-full" />
+            </Link>
+          ) : user?.role === "USER" && user.sellerStatus === "PENDING" ? (
+            <span className="py-5 text-sm font-medium text-gray-400">
+              Application Pending
+            </span>
+          ) : user?.role === "USER" ? (
+            <button
+              type="button"
+              onClick={handleBecomeSeller}
+              disabled={sellerLoading}
+              className="py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {sellerLoading ? "Applying..." : "Become a Seller"}
+            </button>
+          ) : null}
         </div>
 
         {/* Right Side */}

@@ -1,12 +1,13 @@
-export type Role = "USER" | "ADMIN";
+export type Role = "USER" | "ADMIN" | "SELLER";
 
+export type SellerStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED";
 export interface User {
   id: number;
   name: string;
   email: string;
   role: Role;
-  createdAt: string;
-  updatedAt: string;
+  sellerStatus: SellerStatus;
+  emailVerified: boolean;
 }
 
 export interface UserListResponse {

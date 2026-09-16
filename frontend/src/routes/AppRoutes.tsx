@@ -29,6 +29,7 @@ import AdminUsersPage from "../pages/admin/user/AdminUsersPage";
 import AdminUserDetailsPage from "../pages/admin/user/AdminUserDetailsPage";
 import AdminOrdersPage from "../pages/admin/order/AdminOrdersPage";
 import AdminOrderDetailsPage from "../pages/admin/order/AdminOrderDetailsPage";
+import SellerRoute from "./SellerRoute";
 
 const AppRoutes = () => {
   return (
@@ -63,13 +64,14 @@ const AppRoutes = () => {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/my-order" element={<MyOrdersPage />} />
         <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+        <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       </Route>
-      <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+
       {/* =========================
           ADMIN ROUTES
           Login + ADMIN role required
       ========================= */}
-
+      <Route element={<SellerRoute />}></Route>
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
