@@ -48,6 +48,7 @@ export const getAllUsers = async (
       name: true,
       email: true,
       role: true,
+      sellerStatus: true,
       createdAt: true,
       updatedAt: true,
     },

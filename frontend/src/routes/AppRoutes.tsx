@@ -30,6 +30,7 @@ import AdminUserDetailsPage from "../pages/admin/user/AdminUserDetailsPage";
 import AdminOrdersPage from "../pages/admin/order/AdminOrdersPage";
 import AdminOrderDetailsPage from "../pages/admin/order/AdminOrderDetailsPage";
 import SellerRoute from "./SellerRoute";
+import SellerRequests from "../pages/admin/user/seller/SellerRequests";
 
 const AppRoutes = () => {
   return (
@@ -66,12 +67,13 @@ const AppRoutes = () => {
         <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
         <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       </Route>
-
+      {/**Seller Route */}
+      <Route element={<SellerRoute />}></Route>
       {/* =========================
           ADMIN ROUTES
           Login + ADMIN role required
       ========================= */}
-      <Route element={<SellerRoute />}></Route>
+
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
@@ -79,6 +81,7 @@ const AppRoutes = () => {
           <Route path="categories" element={<AdminCategory />} />
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="seller-request" element={<SellerRequests />} />
           <Route path="users/:userId" element={<AdminUserDetailsPage />} />
           <Route path="orders/:orderId" element={<AdminOrderDetailsPage />} />
         </Route>

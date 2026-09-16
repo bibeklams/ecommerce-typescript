@@ -7,6 +7,8 @@ export interface User {
   email: string;
   role: Role;
   sellerStatus: SellerStatus;
+  createdAt: Date;
+  updatedAt: Date;
   emailVerified: boolean;
 }
 
