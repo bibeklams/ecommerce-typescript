@@ -10,6 +10,14 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  SELLER
+}
+
+enum SellerStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -21,6 +29,7 @@ model User {
   order         Order[]
   wishlistItem  WishlistItem[]
   role          Role           @default(USER)
+  sellerStatus  SellerStatus   @default(NONE)
   emailVerified Boolean        @default(false)
 
   deletedAt DateTime?

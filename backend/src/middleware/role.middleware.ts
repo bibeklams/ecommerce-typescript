@@ -17,4 +17,20 @@ export const adminOnly = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+export const sellerOnly = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      throw createError(401, "Authentication required");
+    }
+
+    if (req.user.role !== "SELLER") {
+      throw createError(403, "Only seller can access");
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default adminOnly;
