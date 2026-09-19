@@ -239,6 +239,7 @@ export const changePassword = async (
 
   return "Password changed successfully";
 };
+
 export const login = async (data: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({
     where: {

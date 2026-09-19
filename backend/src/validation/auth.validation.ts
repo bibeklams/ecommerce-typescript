@@ -46,3 +46,39 @@ export const loginSchema = z.object({
     error: "Password is required",
   }),
 });
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .email({
+      error: "Please provide a valid email address",
+    })
+    .trim()
+    .toLowerCase()
+    .max(254, {
+      error: "Email must not exceed 254 characters",
+    }),
+
+  newPassword: z
+    .string()
+    .min(8, {
+      error: "Password must be at least 8 characters",
+    })
+    .max(128, {
+      error: "Password must not exceed 128 characters",
+    }),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, {
+    error: "Current password is required",
+  }),
+
+  newPassword: z
+    .string()
+    .min(8, {
+      error: "Password must be at least 8 characters",
+    })
+    .max(128, {
+      error: "Password must not exceed 128 characters",
+    }),
+});
