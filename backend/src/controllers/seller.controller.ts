@@ -7,8 +7,10 @@ export const applyForSeller = async (
   next: NextFunction,
 ) => {
   try {
-    const userId = req.user!.userId;
-    res.status(201).send(await sellerService.createSeller(userId));
+    const userId = req.user!.id;
+    const result = await sellerService.createSeller(userId);
+
+    res.status(201).send(result);
   } catch (error) {
     next(error);
   }

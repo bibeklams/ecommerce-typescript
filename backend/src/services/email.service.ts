@@ -1,6 +1,9 @@
 import sendEmail from "../utils/sendEmail.js";
 
-import verifyEmailTemplate from "../tamplates/verifyEmail.js";
+import {
+  verifyEmailTemplate,
+  verifyOtpTemplate,
+} from "../tamplates/verifyEmail.js";
 
 import {
   sellerApplicationTemplate,
@@ -29,6 +32,18 @@ export const sendVerificationEmail = async ({
     to: email,
     subject: "Verify your ShopVerse account",
     html: verifyEmailTemplate(name, otp),
+  });
+};
+
+export const sendResetPasswordEmail = async ({
+  email,
+  name,
+  otp,
+}: EmailVerify) => {
+  await sendEmail({
+    to: email,
+    subject: "Verify your ShopVerse account",
+    html: verifyOtpTemplate(name, otp),
   });
 };
 

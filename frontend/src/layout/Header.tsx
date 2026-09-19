@@ -13,6 +13,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const { user, loading } = useAppSelector((state) => state.auth);
+  console.log("CURRENT AUTH USER:", user);
   const { count } = useAppSelector((state) => state.wishlist);
   const { count: cartCount } = useAppSelector((state) => state.cart);
 

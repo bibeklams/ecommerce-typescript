@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import redis from "../config/redis.js";
 import createError from "http-errors";
 import { SellerStatus, Role } from "../generated/prisma/client.js";
 import {
@@ -7,6 +8,15 @@ import {
   sendSellerRejectedEmail,
   sendSellerDeactivatedEmail,
 } from "./email.service.js";
+
+// Invalidate cached user lists
+const invalidateUserListCache = async () => {
+  const keys = await redis.keys("users:*");
+
+  if (keys.length > 0) {
+    await redis.del(keys);
+  }
+};
 
 export const createSeller = async (userId: number) => {
   const user = await prisma.user.findFirst({
@@ -20,6 +30,12 @@ export const createSeller = async (userId: number) => {
   if (!user) {
     throw createError(400, "No user found");
   }
+
+  console.log("CREATE SELLER USER:", {
+    id: user.id,
+    role: user.role,
+    sellerStatus: user.sellerStatus,
+  });
 
   if (user.sellerStatus === SellerStatus.PENDING) {
     throw createError(400, "Request already pending");
@@ -45,10 +61,15 @@ export const createSeller = async (userId: number) => {
       emailVerified: true,
     },
   });
+
+  // Clear cached user lists
+  await invalidateUserListCache();
+
   await sendSellerApplicationEmail({
     email: user.email,
     name: user.name,
   });
+
   return updateUserToSeller;
 };
 
@@ -100,6 +121,9 @@ export const approveSeller = async (userId: number) => {
     },
   });
 
+  // Clear cached user lists
+  await invalidateUserListCache();
+
   await sendSellerApprovedEmail({
     email: user.email,
     name: user.name,
@@ -116,9 +140,11 @@ export const rejectSeller = async (userId: number) => {
       sellerStatus: SellerStatus.PENDING,
     },
   });
+
   if (!user) {
     throw createError(400, "No user found");
   }
+
   const rejectSellerRequest = await prisma.user.update({
     where: {
       id: user.id,
@@ -136,10 +162,15 @@ export const rejectSeller = async (userId: number) => {
       emailVerified: true,
     },
   });
+
+  // Clear cached user lists
+  await invalidateUserListCache();
+
   await sendSellerRejectedEmail({
     email: user.email,
     name: user.name,
   });
+
   return rejectSellerRequest;
 };
 
@@ -152,9 +183,11 @@ export const deactivateSeller = async (userId: number) => {
       deletedAt: null,
     },
   });
+
   if (!user) {
     throw createError(400, "No User found");
   }
+
   const updateSellerToUser = await prisma.user.update({
     where: {
       id: user.id,
@@ -169,11 +202,17 @@ export const deactivateSeller = async (userId: number) => {
       email: true,
       emailVerified: true,
       role: true,
+      sellerStatus: true,
     },
   });
+
+  // Clear cached user lists
+  await invalidateUserListCache();
+
   await sendSellerDeactivatedEmail({
     email: user.email,
     name: user.name,
   });
+
   return updateSellerToUser;
 };

@@ -6,7 +6,10 @@ import {
   generateRefreshToken,
 } from "../utils/generateToken.js";
 import { generateOtp } from "../utils/generateOtp.js";
-import { sendVerificationEmail } from "./email.service.js";
+import {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+} from "./email.service.js";
 import redis from "../config/redis.js";
 import jwt from "jsonwebtoken";
 
@@ -116,6 +119,126 @@ export const verifyEmail = async (email: string, otp: string) => {
   return "Email verified successfully";
 };
 
+export const forgotPassword = async (email: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      deletedAt: null,
+    },
+  });
+
+  if (!user) {
+    throw createError(400, "No user found");
+  }
+
+  const otpDoc = generateOtp();
+
+  const hashOtp = await bcrypt.hash(otpDoc, 10);
+
+  await redis.set(`forgotPassword:${user.id}`, hashOtp, "EX", 300);
+
+  await sendResetPasswordEmail({
+    email: user.email,
+    name: user.name,
+    otp: otpDoc,
+  });
+};
+
+export const verifyResetOtp = async (email: string, otp: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      deletedAt: null,
+      emailVerified: true,
+    },
+  });
+  if (!user) {
+    throw createError(400, "No User found");
+  }
+  const otpDoc = await redis.get(`forgotPassword:${user.id}`);
+  if (!otpDoc) {
+    throw createError(400, "Otp expire");
+  }
+  const verifyOtp = await bcrypt.compare(otp, otpDoc);
+  if (!verifyOtp) {
+    throw createError(400, "Invalid Otp");
+  }
+
+  await redis.del(`forgotPassword:${user.id}`);
+
+  await redis.set(`resetVerified:${user.id}`, "true", "EX", 600);
+};
+
+export const resetPassword = async (email: string, newPassword: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      deletedAt: null,
+      emailVerified: true,
+    },
+  });
+
+  if (!user) {
+    throw createError(400, "No user found");
+  }
+
+  const verifyUser = await redis.get(`resetVerified:${user.id}`);
+
+  if (!verifyUser) {
+    throw createError(400, "Please verify OTP first");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  await redis.del(`resetVerified:${user.id}`);
+
+  return "Password updated successfully";
+};
+
+export const changePassword = async (
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      deletedAt: null,
+    },
+  });
+
+  if (!user) {
+    throw createError(403, "Unauthorized user");
+  }
+
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+
+  if (!isPasswordValid) {
+    throw createError(400, "Invalid password");
+  }
+
+  const hashPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: hashPassword,
+    },
+  });
+
+  return "Password changed successfully";
+};
 export const login = async (data: { email: string; password: string }) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -144,6 +267,7 @@ export const login = async (data: { email: string; password: string }) => {
     refreshToken,
   };
 };
+
 export const refreshToken = async (token: string) => {
   if (!token) {
     throw createError(401, "Invalid token");
