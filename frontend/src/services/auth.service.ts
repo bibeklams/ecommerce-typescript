@@ -21,10 +21,34 @@ export const emailVerify = async (data: { email: string; otp: string }) => {
   return response.data;
 };
 
+export const forgotPassword = async (data: { email: string }) => {
+  const response = await api.post("/auth/forgot-password", data);
+  return response.data;
+};
+
+export const verifyResetOtp = async (data: { email: string; otp: string }) => {
+  const response = await api.post("/auth/verify-reset-otp", data);
+  return response.data;
+};
+
+export const resetPassword = async (data: {
+  email: string;
+  newPassword: string;
+}) => {
+  const response = await api.patch("/auth/reset-password", data);
+  return response.data;
+};
+
+export const changePassword = async (data: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  const response = await api.patch("/auth/change-password", data);
+  return response.data;
+};
+
 export const login = async (data: { email: string; password: string }) => {
   const response = await api.post("/auth/login", data);
-
-  console.log(response.data);
 
   return response.data.data.user;
 };

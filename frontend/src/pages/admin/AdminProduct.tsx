@@ -57,6 +57,15 @@ const AdminProduct = () => {
     );
   }, [dispatch]);
 
+  // Lock page scroll while the modal is open
+  useEffect(() => {
+    document.body.style.overflow = showForm ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showForm]);
+
   // =========================
   // ADD PRODUCT
   // =========================
@@ -93,6 +102,7 @@ const AdminProduct = () => {
     slug: string;
     description?: string;
     price: number;
+    quantity: number;
     categoryId: number;
     detailsJson?: object;
   }) => {
@@ -193,15 +203,13 @@ const AdminProduct = () => {
           </p>
         </div>
 
-        {!showForm && (
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
-          >
-            Add Product
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="rounded-lg bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-800"
+        >
+          Add Product
+        </button>
       </div>
 
       {/* Errors */}
@@ -217,19 +225,6 @@ const AdminProduct = () => {
         </p>
       )}
 
-      {/* Product Form */}
-      {showForm && (
-        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <ProductForm
-            categories={categories}
-            editingProduct={editingProduct}
-            loading={loading}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-          />
-        </div>
-      )}
-
       {/* Product Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <ProductTable
@@ -240,6 +235,49 @@ const AdminProduct = () => {
           onDelete={handleDelete}
         />
       </div>
+
+      {/* Product Form Modal */}
+      {showForm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={handleCancel}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-gray-200 bg-white p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingProduct ? "Edit Product" : "Add Product"}
+              </h2>
+
+              <button
+                type="button"
+                onClick={handleCancel}
+                aria-label="Close"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+
+            <ProductForm
+              categories={categories}
+              editingProduct={editingProduct}
+              loading={loading}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 };

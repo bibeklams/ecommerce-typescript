@@ -11,6 +11,9 @@ import ProductDetailsPage from "../pages/ProductDetailsPage";
 
 import VerifyEmailPage from "../components/auth/VerifyEmailPage";
 import LoginPage from "../components/auth/LoginPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
+import VerifyResetOtpPage from "../pages/auth/VerifyResetOtpPage";
 import RegisterPage from "../components/auth/RegisterPage";
 
 import WishListPage from "../pages/wishlist/wishlistPage";
@@ -52,6 +55,10 @@ const AppRoutes = () => {
 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-reset-otp" element={<VerifyResetOtpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/register" element={<RegisterPage />} />
       </Route>
