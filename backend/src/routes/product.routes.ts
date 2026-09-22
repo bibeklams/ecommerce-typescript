@@ -2,10 +2,10 @@ import express from "express";
 
 import protect from "../middleware/auth.middleware.js";
 import adminOnly from "../middleware/role.middleware.js";
+import { sellerOnly } from "../middleware/role.middleware.js";
 import { validation } from "../middleware/validation.middleware.js";
 
 import upload from "../middleware/upload.middleware.js";
-
 import {
   createProduct,
   updateProduct,
@@ -18,7 +18,7 @@ const router = express.Router();
 router.post(
   "/",
   protect,
-  adminOnly,
+  sellerOnly,
   upload.fields([
     {
       name: "images",
@@ -34,7 +34,12 @@ router.post(
 );
 
 router.get("/", productController.getAllProducts);
-
+router.get(
+  "/seller",
+  protect,
+  sellerOnly,
+  productController.getSellerAllProducts,
+);
 router.get("/count", protect, adminOnly, productController.countProduct);
 
 router.get("/:id", productController.getSingleProduct);
@@ -42,7 +47,7 @@ router.get("/:id", productController.getSingleProduct);
 router.put(
   "/:id",
   protect,
-  adminOnly,
+  sellerOnly,
   upload.fields([
     {
       name: "images",
@@ -57,6 +62,6 @@ router.put(
   productController.updateProduct,
 );
 
-router.delete("/:id", protect, adminOnly, productController.deleteProduct);
+router.delete("/:id", protect, sellerOnly, productController.deleteProduct);
 
 export default router;
