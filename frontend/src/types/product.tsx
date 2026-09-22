@@ -26,15 +26,18 @@ export interface Inventory {
   quantity: number;
   product?: Product;
 }
-
 export interface Product {
   id: number;
   name: string;
   slug: string;
   description?: string;
   price: number;
+
+  sellerId: number;
+
   categoryId: number;
   detailsJson?: Record<string, unknown>;
+
   inventory?: Inventory;
   category?: Category;
   cartItems?: CartItem[];

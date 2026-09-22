@@ -5,6 +5,7 @@ import type { Product } from "../../types/product";
 import {
   createProduct,
   getAllProducts,
+  getSellerAllProducts,
   getSingleProduct,
   deleteProduct,
   updateProduct,
@@ -54,7 +55,6 @@ const initialState: ProductState = {
 
 export type CreateProductData = {
   name: string;
-  slug: string;
   description?: string;
   price: number;
   categoryId: number;
@@ -66,7 +66,6 @@ export type CreateProductData = {
 
 export type UpdateProductData = {
   name?: string;
-  slug?: string;
   description?: string;
   price?: number;
   categoryId?: number;
@@ -97,11 +96,17 @@ export const getAllProductsThunk = createAsyncThunk<
     return response;
   },
 );
+export const getSellerAllProductsThunk = createAsyncThunk<
+  GetProductsResponse,
+  GetProductsParams | undefined
+>(
+  "product/getSellerAllProducts",
+  async ({ search = "", page = 1, limit = 20 } = {}) => {
+    const response = await getSellerAllProducts(search, page, limit);
 
-// =========================
-// GET SINGLE PRODUCT
-// =========================
-
+    return response;
+  },
+);
 export const getSingleProductThunk = createAsyncThunk<Product, number>(
   "product/getSingleProduct",
 
@@ -111,10 +116,6 @@ export const getSingleProductThunk = createAsyncThunk<Product, number>(
     return response;
   },
 );
-
-// =========================
-// UPDATE PRODUCT
-// =========================
 
 export const updateProductThunk = createAsyncThunk<
   Product,
@@ -132,10 +133,6 @@ export const updateProductThunk = createAsyncThunk<
   },
 );
 
-// =========================
-// DELETE PRODUCT
-// =========================
-
 export const deleteProductThunk = createAsyncThunk<Product, number>(
   "product/deleteProduct",
 
@@ -146,10 +143,6 @@ export const deleteProductThunk = createAsyncThunk<Product, number>(
   },
 );
 
-// =========================
-// COUNT PRODUCTS
-// =========================
-
 export const countProductsThunk = createAsyncThunk<number>(
   "product/countProducts",
 
@@ -159,10 +152,6 @@ export const countProductsThunk = createAsyncThunk<number>(
     return response;
   },
 );
-
-// =========================
-// SLICE
-// =========================
 
 const productSlice = createSlice({
   name: "product",
@@ -208,17 +197,11 @@ const productSlice = createSlice({
 
     builder.addCase(getAllProductsThunk.fulfilled, (state, action) => {
       state.loading = false;
-
       state.products = action.payload.products;
-
       state.count = action.payload.total;
-
       state.page = action.payload.page;
-
       state.limit = action.payload.limit;
-
       state.totalPages = action.payload.totalPages;
-
       state.error = null;
     });
 
@@ -228,10 +211,29 @@ const productSlice = createSlice({
       state.error = action.error.message ?? "Failed to get products";
     });
 
-    // =========================
-    // GET SINGLE PRODUCT
-    // =========================
+    //getSellerProduts
+    builder.addCase(getSellerAllProductsThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
 
+    builder.addCase(getSellerAllProductsThunk.fulfilled, (state, action) => {
+      state.loading = false;
+      state.products = action.payload.products;
+      state.count = action.payload.total;
+      state.page = action.payload.page;
+      state.limit = action.payload.limit;
+      state.totalPages = action.payload.totalPages;
+      state.error = null;
+    });
+
+    builder.addCase(getSellerAllProductsThunk.rejected, (state, action) => {
+      state.loading = false;
+
+      state.error = action.error.message ?? "Failed to get products";
+    });
+
+    //getSIngleProduct
     builder.addCase(getSingleProductThunk.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -250,10 +252,6 @@ const productSlice = createSlice({
 
       state.error = action.error.message ?? "Failed to get product";
     });
-
-    // =========================
-    // UPDATE PRODUCT
-    // =========================
 
     builder.addCase(updateProductThunk.pending, (state) => {
       state.loading = true;

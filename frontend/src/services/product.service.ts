@@ -52,6 +52,22 @@ export const getAllProducts = async (search = "", page = 1, limit = 20) => {
   return response.data.data;
 };
 
+export const getSellerAllProducts = async (
+  search = "",
+  page = 1,
+  limit = 20,
+) => {
+  const response = await api.get("/products/seller", {
+    params: {
+      search,
+      page,
+      limit,
+    },
+  });
+
+  return response.data.data;
+};
+
 export const getSingleProduct = async (id: number): Promise<Product> => {
   const response = await api.get(`/products/${id}`);
 
@@ -109,19 +125,12 @@ export const updateProduct = async (
 
   return response.data.data;
 };
-// =========================
-// DELETE PRODUCT
-// =========================
 
 export const deleteProduct = async (id: number) => {
   const response = await api.delete(`/products/${id}`);
 
   return response.data.data;
 };
-
-// =========================
-// COUNT PRODUCTS
-// =========================
 
 export const countProducts = async (): Promise<number> => {
   const response = await api.get("/products/count");
