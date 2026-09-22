@@ -118,7 +118,7 @@ const Header = () => {
 
           {user?.role === "SELLER" ? (
             <Link
-              to="/seller/dashboard"
+              to="/seller"
               className="group relative py-5 text-sm font-medium text-gray-500 transition hover:text-gray-900"
             >
               Seller Dashboard

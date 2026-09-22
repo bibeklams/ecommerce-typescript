@@ -75,8 +75,8 @@ model Product {
   description String?
   price       Int
 
-  sellerId  Int
-  seller    User       @relation(fields: [sellerId], references: [id])
+  sellerId  Int?
+  seller    User?      @relation(fields: [sellerId], references: [id])
   // Product → Inventory (1-to-1)
   inventory Inventory?
 

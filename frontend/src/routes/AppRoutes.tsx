@@ -23,6 +23,10 @@ import MyOrdersPage from "../pages/order/MyOrdersPage";
 import OrderDetailsPage from "../pages/order/OrderDetailsPage";
 
 import OrderSuccessPage from "../pages/order/OrderSuccessPage";
+
+import SellerLayout from "../layout/SellerLayout";
+import SellerDashboard from "../pages/seller/SellerDashboard";
+import SellerProduct from "../pages/seller/product/SellerProduct";
 // import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminDashboardPage from "../pages/admin/dashboard/AdminDashboardPage";
 import AdminProduct from "../pages/admin/AdminProduct";
@@ -74,8 +78,15 @@ const AppRoutes = () => {
         <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
         <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       </Route>
+
       {/**Seller Route */}
-      <Route element={<SellerRoute />}></Route>
+      <Route element={<SellerRoute />}>
+        <Route path="/seller" element={<SellerLayout />}>
+          <Route index element={<SellerDashboard />} />
+          <Route path="products" element={<SellerProduct />} />
+          {/* <Route path="orders" element={<SellerOrders />} /> */}
+        </Route>
+      </Route>
       {/* =========================
           ADMIN ROUTES
           Login + ADMIN role required

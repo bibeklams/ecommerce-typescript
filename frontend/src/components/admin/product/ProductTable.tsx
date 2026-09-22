@@ -16,12 +16,12 @@ const ProductTable = ({
     <section className="mt-8 rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* Header */}
       <div className="border-b border-gray-200 px-6 py-5">
-        <h2 className="text-xl font-bold text-gray-900">Product List</h2>
+        <h2 className="text-xl font-bold text-gray-900">My Products</h2>
 
         <p className="mt-1 text-sm text-gray-500">Manage your store products</p>
       </div>
 
-      {/* Loading */}
+      {/* Initial Loading */}
       {loading && products.length === 0 ? (
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500">Loading products...</p>
@@ -32,7 +32,7 @@ const ProductTable = ({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             {/* Table Header */}
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
@@ -41,8 +41,6 @@ const ProductTable = ({
                 <th className="px-5 py-4 font-semibold text-gray-700">Image</th>
 
                 <th className="px-5 py-4 font-semibold text-gray-700">Name</th>
-
-                <th className="px-5 py-4 font-semibold text-gray-700">Slug</th>
 
                 <th className="px-5 py-4 font-semibold text-gray-700">Price</th>
 
@@ -64,102 +62,103 @@ const ProductTable = ({
 
             {/* Table Body */}
             <tbody className="divide-y divide-gray-100">
-              {products.map((product) => (
-                <tr key={product.id} className="transition hover:bg-gray-50">
-                  {/* ID */}
-                  <td className="px-5 py-4 text-gray-600">{product.id}</td>
+              {products.map((product) => {
+                const images = product.gallery?.images ?? [];
+                const media = product.gallery?.media ?? [];
 
-                  {/* IMAGE */}
-                  <td className="px-5 py-4">
-                    {product.gallery?.images &&
-                    product.gallery.images.length > 0 ? (
-                      <img
-                        src={product.gallery.images[0].url}
-                        alt={product.name}
-                        className="h-16 w-16 rounded-lg border border-gray-200 object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-400">No image</span>
-                    )}
-                  </td>
+                return (
+                  <tr key={product.id} className="transition hover:bg-gray-50">
+                    {/* ID */}
+                    <td className="px-5 py-4 text-gray-600">#{product.id}</td>
 
-                  {/* NAME */}
-                  <td className="px-5 py-4 font-medium text-gray-900">
-                    {product.name}
-                  </td>
+                    {/* IMAGE */}
+                    <td className="px-5 py-4">
+                      {images.length > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={images[0].url}
+                            alt={product.name}
+                            className="h-16 w-16 rounded-lg border border-gray-200 object-cover"
+                          />
 
-                  {/* SLUG */}
-                  <td className="max-w-[180px] px-5 py-4 text-gray-500">
-                    <span className="block truncate">{product.slug}</span>
-                  </td>
+                          {images.length > 1 && (
+                            <span className="text-xs text-gray-500">
+                              +{images.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">No image</span>
+                      )}
+                    </td>
 
-                  {/* PRICE */}
-                  <td className="px-5 py-4 font-medium text-gray-900">
-                    ${product.price}
-                  </td>
+                    {/* NAME */}
+                    <td className="max-w-[220px] px-5 py-4">
+                      <p
+                        className="truncate font-medium text-gray-900"
+                        title={product.name}
+                      >
+                        {product.name}
+                      </p>
+                    </td>
 
-                  {/* QUANTITY */}
-                  <td className="px-5 py-4">
-                    <span className="font-medium text-gray-900">
-                      {product.inventory?.quantity ?? 0}
-                    </span>
-                  </td>
+                    {/* PRICE */}
+                    <td className="px-5 py-4 font-medium text-gray-900">
+                      Rs. {Number(product.price).toLocaleString()}
+                    </td>
 
-                  {/* CATEGORY */}
-                  <td className="px-5 py-4">
-                    {product.category?.name ? (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                        {product.category.name}
+                    {/* QUANTITY */}
+                    <td className="px-5 py-4">
+                      <span className="font-medium text-gray-900">
+                        {product.inventory?.quantity ?? 0}
                       </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">Unknown</span>
-                    )}
-                  </td>
+                    </td>
 
-                  {/* MEDIA */}
-                  <td className="px-5 py-4">
-                    {product.gallery?.media &&
-                    product.gallery.media.length > 0 ? (
-                      <div className="flex flex-col gap-1">
-                        {product.gallery.media.map((media) => (
-                          <a
-                            key={media.id}
-                            href={media.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            View media
-                          </a>
-                        ))}
+                    {/* CATEGORY */}
+                    <td className="px-5 py-4">
+                      {product.category?.name ? (
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                          {product.category.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Unknown</span>
+                      )}
+                    </td>
+
+                    {/* MEDIA */}
+                    <td className="px-5 py-4">
+                      {media.length > 0 ? (
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                          {media.length} {media.length === 1 ? "file" : "files"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">No media</span>
+                      )}
+                    </td>
+
+                    {/* ACTIONS */}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(product)}
+                          className="rounded-md bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-gray-800"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onDelete(product.id)}
+                          className="rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                       </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">No media</span>
-                    )}
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(product)}
-                        className="rounded-md bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-gray-800"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDelete(product.id)}
-                        className="rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
