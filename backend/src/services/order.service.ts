@@ -114,12 +114,6 @@ export const createOrder = async (data: {
           },
         },
       });
-
-      console.log(
-        "Inventory updated:",
-        item.productId,
-        updatedInventory.quantity,
-      );
     }
 
     // Clear cart
@@ -131,8 +125,6 @@ export const createOrder = async (data: {
 
     return newOrder;
   });
-
-  console.log("ORDER CREATED:", order);
 
   // 5. Invalidate product cache
   for (const item of cart.items) {
@@ -148,6 +140,17 @@ export const createOrder = async (data: {
     await redis.del(...orderListKeys);
   }
 
+  const sellerIds = [
+    ...new Set(cart.items.map((item) => item.product.sellerId)),
+  ];
+
+  for (const sellerId of sellerIds) {
+    const sellerOrderKeys = await redis.keys(`seller-orders:${sellerId}:*`);
+
+    if (sellerOrderKeys.length > 0) {
+      await redis.del(...sellerOrderKeys);
+    }
+  }
   return order;
 };
 
@@ -353,6 +356,104 @@ export const getAllOrders = async (
   return result;
 };
 
+export const getAllSellerOrders = async (
+  sellerId: number,
+  search: string = "",
+  page: number = 1,
+  limit: number = 10,
+  status?: OrderStatus,
+  paymentStatus?: PaymentStatus,
+  sortOrder: "asc" | "desc" = "desc",
+) => {
+  const cacheKey = `seller-orders:${sellerId}:search:${search}:page:${page}:limit:${limit}:status:${status ?? "all"}:paymentStatus:${paymentStatus ?? "all"}:sort:${sortOrder}`;
+  const cache = await redis.get(cacheKey);
+  if (cache) {
+    return JSON.parse(cache);
+  }
+  const skip = (page - 1) * limit;
+
+  const where = {
+    deletedAt: null,
+
+    ...(status && {
+      status,
+    }),
+
+    ...(paymentStatus && {
+      payments: {
+        some: {
+          status: paymentStatus,
+        },
+      },
+    }),
+
+    orderItems: {
+      some: {
+        product: {
+          sellerId,
+
+          ...(search && {
+            name: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          }),
+        },
+      },
+    },
+  };
+
+  const orders = await prisma.order.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          email: true,
+        },
+      },
+
+      payments: true,
+
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              gallery: {
+                include: {
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    skip,
+    take: limit,
+
+    orderBy: {
+      createdAt: sortOrder,
+    },
+  });
+
+  const totalOrders = await prisma.order.count({
+    where,
+  });
+
+  const totalPages = Math.ceil(totalOrders / limit);
+
+  const result = {
+    orders,
+    page,
+    limit,
+    totalOrders,
+    totalPages,
+  };
+  await redis.set(cacheKey, JSON.stringify(result), "EX", 300);
+  return result;
+};
+
 export const getMyOrderById = async (userId: number, orderId: number) => {
   const cacheKey = `order:${userId}:${orderId}`;
   const cache = await redis.get(cacheKey);
@@ -388,6 +489,7 @@ export const getMyOrderById = async (userId: number, orderId: number) => {
   await redis.set(cacheKey, JSON.stringify(order), "EX", 300);
   return order;
 };
+
 export const getOrderById = async (orderId: number) => {
   const cacheKey = `order:${orderId}`;
   const cache = await redis.get(cacheKey);
@@ -430,6 +532,67 @@ export const getOrderById = async (orderId: number) => {
   await redis.set(cacheKey, JSON.stringify(order), "EX", 300);
   return order;
 };
+
+export const getSellerOrderById = async (sellerId: number, orderId: number) => {
+  const cacheKey = `seller-order:${sellerId}:${orderId}`;
+
+  const cache = await redis.get(cacheKey);
+
+  if (cache) {
+    return JSON.parse(cache);
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      deletedAt: null,
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      payments: true,
+      orderItems: {
+        where: {
+          product: {
+            sellerId,
+          },
+        },
+        include: {
+          product: {
+            include: {
+              category: true,
+              gallery: {
+                include: {
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw createError(404, "Order not found");
+  }
+
+  await redis.set(cacheKey, JSON.stringify(order), "EX", 300);
+
+  return order;
+};
+
 export const updateOrderStatus = async (
   orderId: number,
   status: OrderStatus,
@@ -438,6 +601,17 @@ export const updateOrderStatus = async (
     where: {
       id: orderId,
       deletedAt: null,
+    },
+    include: {
+      orderItems: {
+        select: {
+          product: {
+            select: {
+              sellerId: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -463,15 +637,36 @@ export const updateOrderStatus = async (
   if (orderListKeys.length > 0) {
     await redis.del(...orderListKeys);
   }
+  const sellerIds = [
+    ...new Set(order.orderItems.map((item) => item.product.sellerId)),
+  ];
 
+  for (const sellerId of sellerIds) {
+    const sellerOrderKeys = await redis.keys(`seller-orders:${sellerId}:*`);
+
+    if (sellerOrderKeys.length > 0) {
+      await redis.del(...sellerOrderKeys);
+    }
+  }
   return updatedOrder;
 };
-export const cancelOrder = async (userId: number, orderId: number) => {
+
+export const updateSellerOrderStatus = async (
+  sellerId: number,
+  orderId: number,
+  status: OrderStatus,
+) => {
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
-      userId,
       deletedAt: null,
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
     },
   });
 
@@ -479,7 +674,60 @@ export const cancelOrder = async (userId: number, orderId: number) => {
     throw createError(404, "Order not found");
   }
 
-  if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
+  const updatedOrder = await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status,
+    },
+  });
+
+  await redis.del(`order:${orderId}`);
+
+  const orderListKeys = await redis.keys("orders:*");
+  if (orderListKeys.length > 0) {
+    await redis.del(...orderListKeys);
+  }
+
+  // Seller order list caches
+  const sellerOrderListKeys = await redis.keys(`seller-orders:${sellerId}:*`);
+
+  if (sellerOrderListKeys.length > 0) {
+    await redis.del(...sellerOrderListKeys);
+  }
+
+  return updatedOrder;
+};
+
+export const cancelOrder = async (userId: number, orderId: number) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      userId,
+      deletedAt: null,
+    },
+    include: {
+      orderItems: {
+        select: {
+          product: {
+            select: {
+              sellerId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw createError(404, "Order not found");
+  }
+
+  if (
+    order.status !== OrderStatus.PENDING &&
+    order.status !== OrderStatus.CONFIRMED
+  ) {
     throw createError(400, "Order cannot be cancelled at this stage");
   }
 
@@ -488,23 +736,98 @@ export const cancelOrder = async (userId: number, orderId: number) => {
       id: orderId,
     },
     data: {
-      status: "CANCELLED",
+      status: OrderStatus.CANCELLED,
     },
   });
 
-  // Invalidate individual order caches
+  // Invalidate individual order cache
   await redis.del(`order:${orderId}`);
-  await redis.del(`order:${userId}:${orderId}`);
 
-  // Invalidate cached order lists
+  // Invalidate order count
+  await redis.del("order:count");
+
+  // Invalidate admin/global order-list caches
   const orderListKeys = await redis.keys("orders:*");
 
   if (orderListKeys.length > 0) {
     await redis.del(...orderListKeys);
   }
 
+  // Invalidate user's order-list caches
+  const userOrderKeys = await redis.keys(`user-orders:${userId}:*`);
+
+  if (userOrderKeys.length > 0) {
+    await redis.del(...userOrderKeys);
+  }
+  const sellerIds = [
+    ...new Set(order.orderItems.map((item) => item.product.sellerId)),
+  ];
+
+  for (const sellerId of sellerIds) {
+    const sellerOrderKeys = await redis.keys(`seller-orders:${sellerId}:*`);
+
+    if (sellerOrderKeys.length > 0) {
+      await redis.del(...sellerOrderKeys);
+    }
+  }
   return cancelledOrder;
 };
+
+export const cancelSellerOrder = async (sellerId: number, orderId: number) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      deletedAt: null,
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw createError(404, "Order not found");
+  }
+
+  // Seller can cancel only before shipping
+  if (
+    order.status === "SHIPPED" ||
+    order.status === "DELIVERED" ||
+    order.status === "CANCELLED"
+  ) {
+    throw createError(
+      400,
+      `Order cannot be cancelled because it is already ${order.status}`,
+    );
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status: "CANCELLED",
+    },
+  });
+  await redis.del(`order:${orderId}`);
+  await redis.del("order:count");
+  const orderListKeys = await redis.keys("orders:*");
+
+  if (orderListKeys.length > 0) {
+    await redis.del(...orderListKeys);
+  }
+
+  const sellerOrderKeys = await redis.keys(`seller-orders:${sellerId}:*`);
+
+  if (sellerOrderKeys.length > 0) {
+    await redis.del(...sellerOrderKeys);
+  }
+  return updatedOrder;
+};
+
 export const countOrder = async () => {
   const cacheKey = "order:count";
 

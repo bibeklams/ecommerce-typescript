@@ -1,7 +1,8 @@
 import * as orderService from "../services/order.service.js";
 import type { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
-import type { OrderStatus, PaymentStatus } from "../generated/prisma/enums.js";
+import { OrderStatus, PaymentStatus } from "../generated/prisma/enums.js";
+
 export const createOrder = async (
   req: Request,
   res: Response,
@@ -29,6 +30,7 @@ export const createOrder = async (
     next(error);
   }
 };
+
 export const getMyOrder = async (
   req: Request,
   res: Response,
@@ -51,6 +53,7 @@ export const getMyOrder = async (
     next(error);
   }
 };
+
 export const getAllOrders = async (
   req: Request,
   res: Response,
@@ -88,6 +91,46 @@ export const getAllOrders = async (
     next(error);
   }
 };
+
+export const getSellerAllOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sellerId = Number(req.user!.id);
+    const search = String(req.query.search ?? "");
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 10);
+
+    const status = req.query.status
+      ? (String(req.query.status) as OrderStatus)
+      : undefined;
+
+    const paymentStatus = req.query.paymentStatus
+      ? (String(req.query.paymentStatus) as PaymentStatus)
+      : undefined;
+
+    const sortOrder = req.query.sortOrder === "asc" ? "asc" : "desc";
+    const result = await orderService.getAllSellerOrders(
+      sellerId,
+      search,
+      page,
+      limit,
+      status,
+      paymentStatus,
+      sortOrder,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getMyOrderById = async (
   req: Request,
   res: Response,
@@ -107,6 +150,7 @@ export const getMyOrderById = async (
     next(error);
   }
 };
+
 export const getOrderByID = async (
   req: Request,
   res: Response,
@@ -115,6 +159,24 @@ export const getOrderByID = async (
   try {
     const orderId = Number(req.params.orderId);
     const result = await orderService.getOrderById(orderId);
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSellerOrderByID = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sellerId = Number(req.user!.id);
+    const orderId = Number(req.params.orderId);
+    const result = await orderService.getSellerOrderById(sellerId, orderId);
     res.status(200).json({
       success: true,
       data: result,
@@ -153,6 +215,46 @@ export const updateOrderStatus = async (
   }
 };
 
+export const updateSellerOrderStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sellerId = req.user!.id;
+    const orderId = Number(req.params.orderId);
+    const status = req.body.status as OrderStatus;
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      throw createError(400, "Invalid order ID");
+    }
+
+    if (!status) {
+      throw createError(400, "Order status is required");
+    }
+
+    const validStatuses = Object.values(OrderStatus);
+
+    if (!validStatuses.includes(status)) {
+      throw createError(400, "Invalid order status");
+    }
+
+    const result = await orderService.updateSellerOrderStatus(
+      sellerId,
+      orderId,
+      status,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const cancelOrder = async (
   req: Request,
   res: Response,
@@ -173,6 +275,28 @@ export const cancelOrder = async (
     next(error);
   }
 };
+
+export const cancelSellerOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sellerId = req.user!.id;
+    const orderId = Number(req.params.orderId);
+
+    const result = await orderService.cancelOrder(sellerId, orderId);
+
+    res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const countOrder = async (
   req: Request,
   res: Response,
