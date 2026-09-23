@@ -37,7 +37,7 @@ const initialState: OrderSlice = {
   totalOrders: 0,
   totalPages: 1,
   page: 1,
-  limit: 20,
+  limit: 10,
   count: 0,
   loading: true,
   error: null,

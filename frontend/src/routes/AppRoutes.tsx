@@ -27,6 +27,8 @@ import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 import SellerLayout from "../layout/SellerLayout";
 import SellerDashboard from "../pages/seller/SellerDashboard";
 import SellerProduct from "../pages/seller/product/SellerProduct";
+import SellerOrderPage from "../pages/seller/order/SellerOrdersPage";
+import SellerOrderDetailsPage from "../pages/seller/order/SellerOrderDetailsPage";
 // import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminDashboardPage from "../pages/admin/dashboard/AdminDashboardPage";
 import AdminProduct from "../pages/admin/AdminProduct";
@@ -84,7 +86,8 @@ const AppRoutes = () => {
         <Route path="/seller" element={<SellerLayout />}>
           <Route index element={<SellerDashboard />} />
           <Route path="products" element={<SellerProduct />} />
-          {/* <Route path="orders" element={<SellerOrders />} /> */}
+          <Route path="orders" element={<SellerOrderPage />} />
+          <Route path="order/:orderId" element={<SellerOrderDetailsPage />} />
         </Route>
       </Route>
       {/* =========================
