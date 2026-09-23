@@ -10,6 +10,10 @@ import {
   getMyOrderById,
   getAllOrders,
   getMyOrders,
+  getAllSellerOrders,
+  cancelSellerOrder,
+  updateSellerOrderStatus,
+  getSellerOrderById,
   getOrderById,
   cancelOrder,
   updateOrderStatus,
@@ -86,6 +90,29 @@ export const getAllOrderThunk = createAsyncThunk<
   return response;
 });
 
+export const getAllSellerOrderThunk = createAsyncThunk<
+  OrderListResponse,
+  {
+    search?: string;
+    page?: number;
+    limit?: number;
+    status?: OrderStatus;
+    paymentStatus?: PaymentStatus;
+    sortOrder?: "asc" | "desc";
+  }
+>("orders/getAllSellerOrders", async (params) => {
+  const response = await getAllSellerOrders(
+    params.search,
+    params.page,
+    params.limit,
+    params.status,
+    params.paymentStatus,
+    params.sortOrder,
+  );
+
+  return response;
+});
+
 export const getMyOrderByIdThunk = createAsyncThunk<Order, number>(
   "orders/getMyOrderById",
   async (orderId) => {
@@ -102,10 +129,26 @@ export const getOrderByIdThunk = createAsyncThunk<Order, number>(
   },
 );
 
+export const getSellerOrderByIdThunk = createAsyncThunk<Order, number>(
+  "orders/getSellerOrderById",
+  async (orderId) => {
+    const response = await getSellerOrderById(orderId);
+    return response;
+  },
+);
+
 export const cancelOrderThunk = createAsyncThunk<Order, number>(
   "orders/cancelOrder",
   async (orderId) => {
     const response = await cancelOrder(orderId);
+    return response;
+  },
+);
+
+export const cancelSellerOrderThunk = createAsyncThunk<Order, number>(
+  "orders/cancelSellerOrder",
+  async (orderId) => {
+    const response = await cancelSellerOrder(orderId);
     return response;
   },
 );
@@ -120,6 +163,18 @@ export const updateOrderStatusThunk = createAsyncThunk<
   const response = await updateOrderStatus(orderId, status);
   return response;
 });
+
+export const updateSellerOrderStatusThunk = createAsyncThunk<
+  Order,
+  {
+    orderId: number;
+    status: OrderStatus;
+  }
+>("orders/updateSellerOrderStatus", async ({ orderId, status }) => {
+  const response = await updateSellerOrderStatus(orderId, status);
+  return response;
+});
+
 export const countOrderThunk = createAsyncThunk<number>(
   "orders/count",
   async () => {
@@ -194,6 +249,24 @@ const orderSlice = createSlice({
       state.error = action.error.message ?? "No order found";
     });
 
+    //getAllSellerOrders
+    builder.addCase(getAllSellerOrderThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getAllSellerOrderThunk.fulfilled, (state, action) => {
+      state.loading = false;
+      state.page = action.payload.page;
+      state.limit = action.payload.limit;
+      state.totalOrders = action.payload.totalOrders;
+      state.totalPages = action.payload.totalPages;
+      state.orders = action.payload.orders;
+      state.error = null;
+    });
+    builder.addCase(getAllSellerOrderThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message ?? "No order found";
+    });
     //getMYOrderById
 
     builder.addCase(getMyOrderByIdThunk.pending, (state) => {
@@ -226,6 +299,21 @@ const orderSlice = createSlice({
       state.error = action.error.message ?? "No order found";
     });
 
+    //getSellerOrderById
+    builder.addCase(getSellerOrderByIdThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getSellerOrderByIdThunk.fulfilled, (state, action) => {
+      state.loading = false;
+      state.selectedOrder = action.payload;
+      state.error = null;
+    });
+    builder.addCase(getSellerOrderByIdThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message ?? "No order found";
+    });
+
     //cancel
 
     builder.addCase(cancelOrderThunk.pending, (state) => {
@@ -244,6 +332,27 @@ const orderSlice = createSlice({
       state.error = null;
     });
     builder.addCase(cancelOrderThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message ?? "No order found";
+    });
+
+    //cancelSellerOrder
+    builder.addCase(cancelSellerOrderThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(cancelSellerOrderThunk.fulfilled, (state, action) => {
+      state.loading = false;
+      state.selectedOrder = action.payload;
+      const index = state.orders.findIndex(
+        (order) => order.id === action.payload.id,
+      );
+      if (index !== -1) {
+        state.orders[index] = action.payload;
+      }
+      state.error = null;
+    });
+    builder.addCase(cancelSellerOrderThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message ?? "No order found";
     });
@@ -278,6 +387,34 @@ const orderSlice = createSlice({
       state.error = action.error.message ?? "No order found";
     });
 
+    //updatesellerOrder
+    builder.addCase(updateSellerOrderStatusThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(updateSellerOrderStatusThunk.fulfilled, (state, action) => {
+      state.loading = false;
+
+      const index = state.orders.findIndex(
+        (order) => order.id === action.payload.id,
+      );
+
+      if (index !== -1) {
+        state.orders[index].status = action.payload.status;
+      }
+
+      if (state.selectedOrder?.id === action.payload.id) {
+        state.selectedOrder.status = action.payload.status;
+      }
+
+      state.error = null;
+    });
+
+    builder.addCase(updateSellerOrderStatusThunk.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message ?? "No order found";
+    });
     //count orders
 
     builder.addCase(countOrderThunk.pending, (state) => {

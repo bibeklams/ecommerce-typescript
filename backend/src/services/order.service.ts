@@ -405,6 +405,7 @@ export const getAllSellerOrders = async (
 
   const orders = await prisma.order.findMany({
     where,
+
     include: {
       user: {
         select: {
@@ -415,6 +416,12 @@ export const getAllSellerOrders = async (
       payments: true,
 
       orderItems: {
+        where: {
+          product: {
+            sellerId,
+          },
+        },
+
         include: {
           product: {
             include: {

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
 import { useAppDispatch } from "../redux/hooks";
 import { logout } from "../redux/slices/authSlice";
 
@@ -36,14 +37,22 @@ const SellerSidebar = () => {
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col gap-2 px-4 py-6">
+        {/* Home */}
+        <NavLink to="/home" className={navLinkClass}>
+          Home
+        </NavLink>
+
+        {/* Dashboard */}
         <NavLink to="/seller" end className={navLinkClass}>
           Dashboard
         </NavLink>
 
+        {/* Products */}
         <NavLink to="/seller/products" className={navLinkClass}>
           Products
         </NavLink>
 
+        {/* Orders */}
         <NavLink to="/seller/orders" className={navLinkClass}>
           Orders
         </NavLink>
