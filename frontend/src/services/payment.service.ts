@@ -60,6 +60,17 @@ export const updatePaymentStatus = async (
   return response.data.data;
 };
 
+export const updateSellerPaymentStatus = async (
+  paymentId: number,
+  paymentStatus: PaymentStatus,
+): Promise<Payment> => {
+  const response = await api.patch(`/payments/seller/${paymentId}/status`, {
+    status: paymentStatus,
+  });
+
+  return response.data.data;
+};
+
 export const requestRefund = async (paymentId: number): Promise<Payment> => {
   const response = await api.post(`/payments/${paymentId}/refund-request`);
 

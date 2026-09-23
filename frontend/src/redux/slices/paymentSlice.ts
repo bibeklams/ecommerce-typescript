@@ -12,6 +12,7 @@ import {
   getMyPayment,
   getAllPayment,
   updatePaymentStatus,
+  updateSellerPaymentStatus,
   requestRefund,
   updateRefundStatus,
 } from "../../services/payment.service";
@@ -91,6 +92,14 @@ export const updatePaymentStatusThunk = createAsyncThunk<
   { paymentId: number; status: PaymentStatus }
 >("/payments/updatePaymentStatus", async ({ paymentId, status }) => {
   const response = await updatePaymentStatus(paymentId, status);
+  return response;
+});
+
+export const updateSellerPaymentStatusThunk = createAsyncThunk<
+  Payment,
+  { paymentId: number; status: PaymentStatus }
+>("/payments/updateSellerPaymentStatus", async ({ paymentId, status }) => {
+  const response = await updateSellerPaymentStatus(paymentId, status);
   return response;
 });
 
@@ -224,6 +233,37 @@ const paymentSlice = createSlice({
       state.error = action.error.message ?? "No payment found";
     });
 
+    //updateSellerPayment
+    builder.addCase(updateSellerPaymentStatusThunk.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(
+      updateSellerPaymentStatusThunk.fulfilled,
+      (state, action) => {
+        state.loading = false;
+        state.selectedPayment = action.payload;
+
+        const index = state.payments.findIndex(
+          (payment) => payment.id === action.payload.id,
+        );
+
+        if (index !== -1) {
+          state.payments[index] = action.payload;
+        }
+
+        state.error = null;
+      },
+    );
+
+    builder.addCase(
+      updateSellerPaymentStatusThunk.rejected,
+      (state, action) => {
+        state.loading = false;
+        state.error = action.error.message ?? "No payment found";
+      },
+    );
     //updateRefundstatus
 
     builder.addCase(updateRefundStatusThunk.pending, (state) => {

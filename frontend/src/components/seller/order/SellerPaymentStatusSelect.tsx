@@ -1,19 +1,20 @@
 import { useState } from "react";
-
+import type { ChangeEvent } from "react";
 import type { Payment } from "../../../types/payment";
-import { updatePaymentStatus } from "../../../services/payment.service";
+import { useAppDispatch } from "../../../redux/hooks";
+import { updateSellerPaymentStatusThunk } from "../../../redux/slices/paymentSlice";
 
 interface PaymentStatusSelectProps {
   payment: Payment;
 }
 
 const SellerPaymentStatusSelect = ({ payment }: PaymentStatusSelectProps) => {
+  const dispatch = useAppDispatch();
+
   const [status, setStatus] = useState(payment.status);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusChange = async (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
+  const handleStatusChange = async (event: ChangeEvent<HTMLSelectElement>) => {
     const newStatus = event.target.value as Payment["status"];
 
     if (newStatus === status) {
@@ -22,15 +23,21 @@ const SellerPaymentStatusSelect = ({ payment }: PaymentStatusSelectProps) => {
 
     const previousStatus = status;
 
+    // Optimistic UI
     setStatus(newStatus);
     setIsUpdating(true);
 
     try {
-      await updatePaymentStatus(payment.id, newStatus);
+      await dispatch(
+        updateSellerPaymentStatusThunk({
+          paymentId: payment.id,
+          status: newStatus,
+        }),
+      ).unwrap();
     } catch (error) {
       console.error("Failed to update payment status:", error);
 
-      // Roll back UI if API request fails
+      // Rollback UI
       setStatus(previousStatus);
     } finally {
       setIsUpdating(false);

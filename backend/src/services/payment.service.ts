@@ -12,6 +12,7 @@ interface EsewaCheckoutData {
   shippingPhone: string;
   shippingAddress: string;
 }
+
 export const createPayment = async (
   userId: number,
   orderId: number,
@@ -122,6 +123,59 @@ export const updatePaymentStatus = async (
   return updatedPayment;
 };
 
+export const updateSellerPaymentStatus = async (
+  sellerId: number,
+  paymentId: number,
+  status: PaymentStatus,
+) => {
+  const payment = await prisma.payment.findFirst({
+    where: {
+      id: paymentId,
+      order: {
+        orderItems: {
+          some: {
+            product: {
+              sellerId,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    throw createError(404, "Payment not found");
+  }
+
+  if (payment.status === PaymentStatus.PAID) {
+    throw createError(400, "Payment is already paid");
+  }
+
+  if (payment.status === PaymentStatus.REFUNDED) {
+    throw createError(400, "Refunded payment cannot be changed");
+  }
+
+  const allowedStatuses: PaymentStatus[] = [
+    PaymentStatus.PAID,
+    PaymentStatus.FAILED,
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    throw createError(400, "Invalid payment status");
+  }
+
+  const updatedPayment = await prisma.payment.update({
+    where: {
+      id: paymentId,
+    },
+    data: {
+      status,
+    },
+  });
+
+  return updatedPayment;
+};
+
 export const requestRefund = async (userId: number, paymentId: number) => {
   const payment = await prisma.payment.findFirst({
     where: {
@@ -195,6 +249,7 @@ export const updateRefundStatus = async (
 
   return updatedPayment;
 };
+
 export const getAllPayments = async (
   search: string = "",
   status?: PaymentStatus,

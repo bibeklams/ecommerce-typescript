@@ -4,7 +4,7 @@ import * as paymentController from "../controllers/payment.controller.js";
 
 import protect from "../middleware/auth.middleware.js";
 
-import adminOnly from "../middleware/role.middleware.js";
+import adminOnly, { sellerOnly } from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
@@ -43,4 +43,11 @@ router.patch(
   paymentController.updateRefundStatus,
 );
 
+//seller
+router.patch(
+  "/seller/:paymentId/status",
+  protect,
+  sellerOnly,
+  paymentController.updateSellerPaymentStatus,
+);
 export default router;

@@ -73,6 +73,7 @@ export const getAllPayment = async (
     next(error);
   }
 };
+
 export const updatePaymentStatus = async (
   req: Request,
   res: Response,
@@ -93,6 +94,32 @@ export const updatePaymentStatus = async (
     next(error);
   }
 };
+export const updateSellerPaymentStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const sellerId = req.user!.id;
+    const paymentId = Number(req.params.paymentId);
+    const { status } = req.body;
+
+    const result = await paymentService.updateSellerPaymentStatus(
+      sellerId,
+      paymentId,
+      status as PaymentStatus,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const requestRefund = async (
   req: Request,
   res: Response,
