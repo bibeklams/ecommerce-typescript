@@ -74,7 +74,7 @@ const SellerOrderRow = ({ order }: AdminOrderRowProps) => {
       {/* Action */}
       <td className="px-5 py-4">
         <Link
-          to={`/admin/orders/${order.id}`}
+          to={`/seller/orders/${order.id}`}
           className="inline-block rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
         >
           View

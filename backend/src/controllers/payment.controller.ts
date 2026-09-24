@@ -94,6 +94,7 @@ export const updatePaymentStatus = async (
     next(error);
   }
 };
+
 export const updateSellerPaymentStatus = async (
   req: Request,
   res: Response,

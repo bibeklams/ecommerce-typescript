@@ -138,6 +138,7 @@ export const getTopSellingProducts = async () => {
 
   return result;
 };
+
 export const getSalesOverview = async () => {
   const orders = await prisma.order.findMany({
     where: {
@@ -178,9 +179,290 @@ export const getSalesOverview = async () => {
     revenue,
   }));
 };
+
 export const getLowStockProducts = async () => {
   const products = await prisma.product.findMany({
     where: {
+      deletedAt: null,
+      inventory: {
+        quantity: {
+          lte: 10,
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      inventory: {
+        select: {
+          quantity: true,
+        },
+      },
+      gallery: {
+        include: {
+          images: true,
+        },
+      },
+    },
+    orderBy: {
+      inventory: {
+        quantity: "asc",
+      },
+    },
+    take: 5,
+  });
+
+  return products;
+};
+
+//sellerDashboard
+
+export const getSellerDashboardStats = async (sellerId: number) => {
+  const products = await prisma.product.count({
+    where: {
+      sellerId,
+      deletedAt: null,
+    },
+  });
+
+  const orders = await prisma.order.count({
+    where: {
+      deletedAt: null,
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+    },
+  });
+
+  const revenue = await prisma.order.aggregate({
+    where: {
+      deletedAt: null,
+      status: {
+        not: "CANCELLED",
+      },
+      payments: {
+        some: {
+          status: "PAID",
+        },
+      },
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+    },
+    _sum: {
+      total: true,
+    },
+  });
+
+  return {
+    products,
+    orders,
+    revenue: Number(revenue._sum.total ?? 0),
+  };
+};
+
+export const getSellerRecentOrders = async (sellerId: number) => {
+  const orders = await prisma.order.findMany({
+    where: {
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+      deletedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      orderItems: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              gallery: {
+                include: {
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      payments: true,
+    },
+  });
+
+  return orders;
+};
+
+export const getSellerTopSellingProducts = async (sellerId: number) => {
+  // 1. Get products belonging to this seller
+  const sellerProducts = await prisma.product.findMany({
+    where: {
+      sellerId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const productIds = sellerProducts.map((product) => product.id);
+
+  if (productIds.length === 0) {
+    return [];
+  }
+
+  // 2. Find top 5 products based on quantity sold
+  const topProducts = await prisma.orderItem.groupBy({
+    by: ["productId"],
+    where: {
+      productId: {
+        in: productIds,
+      },
+    },
+    _sum: {
+      quantity: true,
+    },
+    orderBy: {
+      _sum: {
+        quantity: "desc",
+      },
+    },
+    take: 5,
+  });
+
+  // 3. Get product information
+  const products = await prisma.product.findMany({
+    where: {
+      id: {
+        in: productIds,
+      },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      gallery: {
+        include: {
+          images: true,
+        },
+      },
+    },
+  });
+
+  // 4. Combine product information with quantity sold
+  const result = topProducts.map((topProduct) => {
+    const product = products.find(
+      (product) => product.id === topProduct.productId,
+    );
+
+    return {
+      id: topProduct.productId,
+      name: product?.name ?? "Unknown Product",
+      quantitySold: topProduct._sum.quantity ?? 0,
+      gallery: product?.gallery ?? null,
+    };
+  });
+
+  return result;
+};
+
+export const getSellerSalesOverview = async (sellerId: number) => {
+  const orders = await prisma.order.findMany({
+    where: {
+      deletedAt: null,
+
+      status: {
+        not: "CANCELLED",
+      },
+
+      payments: {
+        some: {
+          status: "PAID",
+        },
+      },
+
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+
+      orderItems: {
+        some: {
+          product: {
+            sellerId,
+          },
+        },
+      },
+    },
+
+    select: {
+      createdAt: true,
+
+      orderItems: {
+        where: {
+          product: {
+            sellerId,
+          },
+        },
+
+        select: {
+          quantity: true,
+          price: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  const sales = new Map<string, number>();
+
+  for (const order of orders) {
+    const date = order.createdAt.toISOString().split("T")[0];
+
+    const orderRevenue = order.orderItems.reduce(
+      (total, item) => total + item.quantity * Number(item.price),
+      0,
+    );
+
+    const currentRevenue = sales.get(date) ?? 0;
+
+    sales.set(date, currentRevenue + orderRevenue);
+  }
+
+  return Array.from(sales, ([date, revenue]) => ({
+    date,
+    revenue,
+  }));
+};
+
+export const getSellerLowStockProducts = async (sellerId: number) => {
+  const products = await prisma.product.findMany({
+    where: {
+      sellerId,
       deletedAt: null,
       inventory: {
         quantity: {
