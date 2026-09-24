@@ -32,10 +32,11 @@ model User {
   sellerStatus  SellerStatus   @default(NONE)
   emailVerified Boolean        @default(false)
 
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  products       Product[]
+  productReviews ProductReview[]
 }
 
 model Category {
@@ -105,7 +106,8 @@ model Product {
   orderItems OrderItem[]
 
   // Product → WishlistItem (1-to-many)
-  wishlistItems WishlistItem[]
+  wishlistItems  WishlistItem[]
+  productReviews ProductReview[]
 
   @@index([categoryId])
 }
@@ -306,4 +308,23 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   @@index([transactionId])
+}
+
+model ProductReview {
+  id      Int     @id @default(autoincrement())
+  rating  Int
+  comment String?
+
+  userId    Int
+  productId Int
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([userId, productId])
+  @@index([productId])
 }

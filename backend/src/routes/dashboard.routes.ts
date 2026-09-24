@@ -27,13 +27,13 @@ router.get(
 router.get("/sales", protect, adminOnly, dashboardController.getSalesOverview);
 
 //seller
-
 router.get(
   "/seller/stats",
   protect,
   sellerOnly,
   dashboardController.getSellerDashboardStats,
 );
+
 router.get(
   "/seller/recent-orders",
   protect,

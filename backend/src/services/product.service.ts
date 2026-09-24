@@ -485,7 +485,7 @@ export const deleteProduct = async (id: number, sellerId: number) => {
 
   await redis.del(`product:${id}`);
   await redis.del("products:count");
-
+  await redis.del(`productReview:${id}`);
   const productListKeys = await redis.keys("products:*");
 
   if (productListKeys.length > 0) {
