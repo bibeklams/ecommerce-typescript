@@ -36,7 +36,7 @@ const initialState: DashboardSlice = {
   loading: false,
   error: null,
 };
-
+//adminDashboard
 export const getDashboardStatsThunk = createAsyncThunk<DashboardStats>(
   "dashboard/stats",
   async () => {
@@ -77,10 +77,12 @@ export const getTopSellingProductsThunk = createAsyncThunk<TopSellingProduct[]>(
     return response;
   },
 );
+
 const dashboardSlice = createSlice({
   name: "dashboard",
   initialState,
   reducers: {},
+
   extraReducers(builder) {
     builder.addCase(getDashboardStatsThunk.pending, (state) => {
       state.loading = true;

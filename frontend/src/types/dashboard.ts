@@ -7,7 +7,11 @@ export interface DashboardStats {
   orders: number;
   revenue: number;
 }
-
+export interface SellerDashboardStats {
+  products: number;
+  orders: number;
+  revenue: number;
+}
 export interface RecentOrder {
   id: number;
   total: number;
