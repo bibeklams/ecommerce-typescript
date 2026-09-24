@@ -25,7 +25,7 @@ import OrderDetailsPage from "../pages/order/OrderDetailsPage";
 import OrderSuccessPage from "../pages/order/OrderSuccessPage";
 
 import SellerLayout from "../layout/SellerLayout";
-import SellerDashboard from "../pages/seller/SellerDashboard";
+import SellerDashboardPage from "../pages/seller/dashboard/SellerDashboardPage";
 import SellerProduct from "../pages/seller/product/SellerProduct";
 import SellerOrderPage from "../pages/seller/order/SellerOrdersPage";
 import SellerOrderDetailsPage from "../pages/seller/order/SellerOrderDetailsPage";
@@ -84,7 +84,7 @@ const AppRoutes = () => {
       {/**Seller Route */}
       <Route element={<SellerRoute />}>
         <Route path="/seller" element={<SellerLayout />}>
-          <Route index element={<SellerDashboard />} />
+          <Route index element={<SellerDashboardPage />} />
           <Route path="products" element={<SellerProduct />} />
           <Route path="orders" element={<SellerOrderPage />} />
           <Route path="orders/:orderId" element={<SellerOrderDetailsPage />} />
