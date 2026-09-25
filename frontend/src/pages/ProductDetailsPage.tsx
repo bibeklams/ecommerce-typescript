@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { getSingleProductThunk } from "../redux/slices/productSlice";
+import ReviewSection from "../components/reviews/ReviewSection";
 import {
   addToWishlist,
   removeWishlistThunk,
@@ -309,7 +310,7 @@ const ProductDetailsPage = () => {
             </div>
           </section>
         )}
-
+        <ReviewSection productId={product.id} />
         {/* 
           RELATED PRODUCTS WILL GO HERE LATER
 
