@@ -6,6 +6,7 @@ import {
   createReviewSchema,
   updateReviewSchema,
 } from "../validation/review.validation.js";
+
 const router = express.Router();
 
 router.post(
@@ -15,7 +16,7 @@ router.post(
   reviewController.createReview,
 );
 
-router.get("/:productId", reviewController.getProductReview);
+router.get("/:productId", reviewController.getProductReviews);
 
 router.put(
   "/:productId",

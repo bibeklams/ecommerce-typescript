@@ -22,7 +22,7 @@ export const createReview = async (
   }
 };
 
-export const getProductReview = async (
+export const getProductReviews = async (
   req: Request,
   res: Response,
   next: NextFunction,

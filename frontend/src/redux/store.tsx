@@ -12,6 +12,7 @@ import dashboardReducer from "./slices/dashboardSlice";
 import userReducer from "./slices/userSlice";
 import sellerReducer from "./slices/sellerSlice";
 import sellerDashboardReducer from "./slices/sellerDashboardSlice";
+import reviewReducer from "./slices/reviewSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -26,6 +27,7 @@ export const store = configureStore({
     sellerDashboard: sellerDashboardReducer,
     user: userReducer,
     seller: sellerReducer,
+    review: reviewReducer,
   },
 });
 
