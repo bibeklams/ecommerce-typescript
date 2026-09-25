@@ -11,6 +11,7 @@ import paymentRoutes from "./payment.routes.js";
 import dashboardRoutes from "./dashboard.routes.js";
 import userRoutes from "./user.routes.js";
 import sellerRoutes from "./seller.routes.js";
+import reviewRoutes from "./review.routes.js";
 const router = express.Router();
 
 router.use("/auth", authRoutes);
@@ -25,5 +26,6 @@ router.use("/payments", paymentRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/users", userRoutes);
 router.use("/sellers", sellerRoutes);
+router.use("/review", reviewRoutes);
 
 export default router;
