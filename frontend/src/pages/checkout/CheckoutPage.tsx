@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CheckoutForm from "../../components/checkout/CheckoutForm";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-
 import { getCartThunk } from "../../redux/slices/cartSlice";
 import { createOrderThunk } from "../../redux/slices/orderSlice";
 import { createPaymentThunk } from "../../redux/slices/paymentSlice";
-
 import { initiateEsewaPayment } from "../../services/payment.service";
 import { getSingleProduct } from "../../services/product.service";
-
 import type { CheckoutValues } from "../../types/checkout";
 import type { EsewaPaymentData } from "../../types/payment";
 import type { Product } from "../../types/product";
@@ -20,14 +17,29 @@ const CheckoutPage = () => {
 
   const [searchParams] = useSearchParams();
 
+  /*
+   * =====================================================
+   * URL PARAMETERS
+   * =====================================================
+   */
+
   const productIdParam = searchParams.get("productId");
   const quantityParam = searchParams.get("quantity");
 
   const productId = productIdParam ? Number(productIdParam) : null;
 
-  const quantity = quantityParam ? Number(quantityParam) : 1;
+  const initialQuantity = quantityParam ? Number(quantityParam) : 1;
 
   const isBuyNow = productId !== null;
+
+  /*
+   * =====================================================
+   * STATE
+   * =====================================================
+   */
+
+  const [checkoutQuantity, setCheckoutQuantity] =
+    useState<number>(initialQuantity);
 
   const [buyNowProduct, setBuyNowProduct] = useState<Product | null>(null);
 
@@ -36,6 +48,12 @@ const CheckoutPage = () => {
   const [buyNowError, setBuyNowError] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /*
+   * =====================================================
+   * CART
+   * =====================================================
+   */
 
   const {
     items,
@@ -54,19 +72,19 @@ const CheckoutPage = () => {
     (!productId ||
       !Number.isInteger(productId) ||
       productId <= 0 ||
-      !Number.isInteger(quantity) ||
-      quantity <= 0);
+      !Number.isInteger(checkoutQuantity) ||
+      checkoutQuantity <= 0);
 
   /*
    * =====================================================
    * LOAD CHECKOUT DATA
-   * =====================================================
    *
    * Buy Now:
-   *   Load only the selected product.
+   *   Load only selected product.
    *
    * Cart:
-   *   Load the user's cart.
+   *   Load user's cart.
+   * =====================================================
    */
 
   useEffect(() => {
@@ -104,6 +122,13 @@ const CheckoutPage = () => {
    * =====================================================
    * CHECKOUT ITEMS
    * =====================================================
+   *
+   * Buy Now:
+   *   Uses local checkoutQuantity.
+   *
+   * Cart:
+   *   Uses cart items directly.
+   * =====================================================
    */
 
   const checkoutItems = isBuyNow
@@ -112,7 +137,7 @@ const CheckoutPage = () => {
           {
             id: buyNowProduct.id,
             product: buyNowProduct,
-            quantity,
+            quantity: checkoutQuantity,
           },
         ]
       : []
@@ -132,6 +157,12 @@ const CheckoutPage = () => {
     form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
 
     Object.entries(paymentData).forEach(([key, value]) => {
+      /*
+       * orderId is used internally by our backend.
+       *
+       * eSewa only receives the payment fields it expects.
+       */
+
       if (key === "orderId") {
         return;
       }
@@ -165,15 +196,9 @@ const CheckoutPage = () => {
 
     try {
       /*
-       * Convert either:
-       *
-       * Cart items
-       *
-       * OR
-       *
-       * Buy Now item
-       *
-       * into the same order format.
+       * =================================================
+       * CONVERT CHECKOUT ITEMS TO ORDER ITEMS
+       * =================================================
        */
 
       const orderItems = checkoutItems.map((item) => ({
@@ -186,17 +211,16 @@ const CheckoutPage = () => {
        * CREATE ORDER
        * =================================================
        *
-       * Backend calculates the actual price.
+       * Backend calculates the actual product price.
+       *
+       * Never trust price from the frontend.
        */
 
       const order = await dispatch(
         createOrderThunk({
           shippingName: values.shippingName,
-
           shippingPhone: values.shippingPhone,
-
           shippingAddress: values.shippingAddress,
-
           items: orderItems,
         }),
       ).unwrap();
@@ -229,8 +253,12 @@ const CheckoutPage = () => {
        *
        * Order already exists.
        *
-       * Backend creates the pending eSewa payment
-       * and generates the signed payment data.
+       * Backend:
+       *   1. Creates pending eSewa payment
+       *   2. Generates signed eSewa payment data
+       *
+       * Frontend:
+       *   3. Submits that data to eSewa
        */
 
       if (values.paymentMethod === "ESEWA") {
@@ -319,7 +347,9 @@ const CheckoutPage = () => {
         <h1 className="mb-8 text-3xl font-bold text-gray-900">Checkout</h1>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* PRODUCTS */}
+          {/* =================================================
+              PRODUCTS
+          ================================================= */}
 
           <section className="rounded-xl bg-white p-6 shadow-md">
             <h2 className="mb-6 text-xl font-semibold text-gray-800">
@@ -332,6 +362,8 @@ const CheckoutPage = () => {
                   key={item.id}
                   className="flex gap-4 rounded-lg border border-gray-200 p-4"
                 >
+                  {/* PRODUCT IMAGE */}
+
                   {item.product.gallery?.images?.[0]?.url ? (
                     <img
                       src={item.product.gallery.images[0].url}
@@ -344,6 +376,8 @@ const CheckoutPage = () => {
                     </div>
                   )}
 
+                  {/* PRODUCT INFORMATION */}
+
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">
                       {item.product.name}
@@ -353,11 +387,65 @@ const CheckoutPage = () => {
                       Price: Rs. {item.product.price}
                     </p>
 
-                    <p className="text-sm text-gray-600">
-                      Quantity: {item.quantity}
-                    </p>
+                    {/* =================================================
+                        QUANTITY
+                    ================================================= */}
 
-                    <p className="mt-1 font-semibold text-gray-900">
+                    <div className="mt-3 flex items-center gap-3">
+                      <span className="text-sm text-gray-600">Quantity:</span>
+
+                      {isBuyNow ? (
+                        <div className="flex items-center overflow-hidden rounded-md border border-gray-300">
+                          {/* DECREMENT */}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCheckoutQuantity((current) =>
+                                Math.max(1, current - 1),
+                              )
+                            }
+                            disabled={checkoutQuantity <= 1}
+                            className="px-3 py-1 text-lg font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            −
+                          </button>
+
+                          {/* QUANTITY */}
+
+                          <span className="min-w-10 border-x border-gray-300 px-3 py-1 text-center text-sm font-medium text-gray-900">
+                            {checkoutQuantity}
+                          </span>
+
+                          {/* INCREMENT */}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCheckoutQuantity((current) => current + 1)
+                            }
+                            className="px-3 py-1 text-lg font-semibold text-gray-700 transition hover:bg-gray-100"
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        /*
+                         * Cart checkout:
+                         *
+                         * Cart quantity is controlled by the cart.
+                         * We don't modify it directly here.
+                         */
+
+                        <span className="text-sm font-medium text-gray-700">
+                          {item.quantity}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* SUBTOTAL */}
+
+                    <p className="mt-2 font-semibold text-gray-900">
                       Subtotal: Rs. {Number(item.product.price) * item.quantity}
                     </p>
                   </div>
@@ -366,7 +454,9 @@ const CheckoutPage = () => {
             </div>
           </section>
 
-          {/* CHECKOUT FORM */}
+          {/* =================================================
+              CHECKOUT FORM
+          ================================================= */}
 
           <section>
             <CheckoutForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
