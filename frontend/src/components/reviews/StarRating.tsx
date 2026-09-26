@@ -3,15 +3,17 @@ interface StarRatingProps {
   size?: "sm" | "md" | "lg";
 }
 
-const StarRating = ({ rating, size = "md" }: StarRatingProps) => {
-  const sizeClass = {
-    sm: "text-sm",
-    md: "text-lg",
-    lg: "text-2xl",
-  };
+const sizeClass = {
+  sm: "text-sm",
+  md: "text-lg",
+  lg: "text-2xl",
+};
 
+const StarRating = ({ rating, size = "md" }: StarRatingProps) => {
   return (
-    <div className={`flex ${sizeClass[size]}`}>
+    <div
+      className={`flex items-center gap-0.5 leading-none ${sizeClass[size]}`}
+    >
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}

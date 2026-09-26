@@ -43,11 +43,37 @@ export const createReview = async (
     },
   });
 
+  // Active review already exists
   if (existingProductReview && existingProductReview.deletedAt === null) {
     throw createError(400, "Review already exists");
   }
 
-  // Create review
+  // Previously deleted review exists → restore it
+  if (existingProductReview && existingProductReview.deletedAt !== null) {
+    const restoredReview = await prisma.productReview.update({
+      where: {
+        userId_productId: {
+          userId,
+          productId,
+        },
+      },
+      data: {
+        rating,
+        comment,
+        deletedAt: null,
+      },
+    });
+
+    const keys = await redis.keys(`productReviews:${productId}:*`);
+
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+
+    return restoredReview;
+  }
+
+  // No previous review → create new review
   const review = await prisma.productReview.create({
     data: {
       userId,
@@ -134,18 +160,18 @@ export const updateReview = async (
   rating?: number,
   comment?: string,
 ) => {
-  // Find active review belonging to this user and product
-  const existingProductReview = await prisma.productReview.findFirst({
+  // Find the review belonging to this user and product
+  const existingProductReview = await prisma.productReview.findUnique({
     where: {
       userId_productId: {
         userId,
         productId,
       },
-      deletedAt: null,
     },
   });
 
-  if (!existingProductReview) {
+  // Review doesn't exist OR was soft deleted
+  if (!existingProductReview || existingProductReview.deletedAt !== null) {
     throw createError(404, "No review found");
   }
 

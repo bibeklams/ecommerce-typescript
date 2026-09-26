@@ -7,10 +7,14 @@ export const createOrder = async (data: {
   shippingName: string;
   shippingPhone: string;
   shippingAddress: string;
-}): Promise<Order> => {
+  items: {
+    productId: number;
+    quantity: number;
+  }[];
+}) => {
   const response = await api.post("/orders", data);
 
-  return response.data.data;
+  return response.data;
 };
 
 export const getAllOrders = async (

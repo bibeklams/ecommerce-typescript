@@ -1,63 +1,98 @@
+import { useState } from "react";
+
+import { useAppDispatch } from "../../redux/hooks";
+import { createReviewThunk } from "../../redux/slices/reviewSlice";
+
 interface ReviewFormProps {
   productId: number;
 }
 
 const ReviewForm = ({ productId }: ReviewFormProps) => {
-  return (
-    <form className="rounded-lg border border-gray-200 p-5">
-      <h3 className="text-lg font-semibold text-gray-900">Write a Review</h3>
+  const dispatch = useAppDispatch();
 
-      <p className="mt-2 text-sm text-gray-500">Product ID: {productId}</p>
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!rating) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const result = await dispatch(
+        createReviewThunk({
+          productId,
+          data: {
+            rating,
+            comment: comment.trim() || undefined,
+          },
+        }),
+      );
+
+      if (createReviewThunk.fulfilled.match(result)) {
+        setRating(0);
+        setComment("");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-lg border border-gray-200 p-4"
+    >
+      <h3 className="text-sm font-semibold text-gray-900">Write a review</h3>
 
       {/* Rating */}
-      <div className="mt-4">
-        <label
-          htmlFor="rating"
-          className="mb-2 block text-sm font-medium text-gray-700"
-        >
-          Rating
-        </label>
+      <div className="mt-3 flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((value) => (
+          <button
+            key={value}
+            type="button"
+            disabled={submitting}
+            onClick={() => setRating(value)}
+            onMouseEnter={() => setHoverRating(value)}
+            onMouseLeave={() => setHoverRating(0)}
+            className="text-xl leading-none text-gray-300 transition-colors disabled:cursor-not-allowed"
+            style={{
+              color: value <= (hoverRating || rating) ? "#111827" : undefined,
+            }}
+            aria-label={`${value} star${value > 1 ? "s" : ""}`}
+          >
+            ★
+          </button>
+        ))}
 
-        <select
-          id="rating"
-          name="rating"
-          defaultValue=""
-          className="rounded-md border border-gray-300 px-3 py-2"
-        >
-          <option value="" disabled>
-            Select rating
-          </option>
-          <option value="5">★★★★★ - 5</option>
-          <option value="4">★★★★☆ - 4</option>
-          <option value="3">★★★☆☆ - 3</option>
-          <option value="2">★★☆☆☆ - 2</option>
-          <option value="1">★☆☆☆☆ - 1</option>
-        </select>
+        {rating > 0 && (
+          <span className="ml-1 text-xs text-gray-500">{rating}/5</span>
+        )}
       </div>
 
       {/* Comment */}
-      <div className="mt-4">
-        <label
-          htmlFor="comment"
-          className="mb-2 block text-sm font-medium text-gray-700"
-        >
-          Comment
-        </label>
+      <textarea
+        id="comment"
+        name="comment"
+        rows={3}
+        value={comment}
+        onChange={(event) => setComment(event.target.value)}
+        placeholder="Share your thoughts about this product..."
+        disabled={submitting}
+        className="mt-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
+      />
 
-        <textarea
-          id="comment"
-          name="comment"
-          rows={4}
-          placeholder="Write your review..."
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-      </div>
-
+      {/* Submit */}
       <button
         type="submit"
-        className="mt-4 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+        disabled={submitting || !rating}
+        className="mt-3 rounded-md bg-gray-900 px-4 py-2 text-xs font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Submit Review
+        {submitting ? "Submitting..." : "Submit Review"}
       </button>
     </form>
   );

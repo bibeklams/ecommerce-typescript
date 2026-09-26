@@ -26,6 +26,6 @@ router.use("/payments", paymentRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/users", userRoutes);
 router.use("/sellers", sellerRoutes);
-router.use("/review", reviewRoutes);
+router.use("/reviews", reviewRoutes);
 
 export default router;

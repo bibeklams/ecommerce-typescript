@@ -222,7 +222,7 @@ export const countCartItems = async (data: {
   });
 
   if (!cart) {
-    throw createError(404, "Cart not found");
+    return 0;
   }
 
   const count = await prisma.cartItem.count({

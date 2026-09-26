@@ -172,11 +172,16 @@ const reviewSlice = createSlice({
 
       .addCase(updateReviewThunk.fulfilled, (state, action) => {
         state.loading = false;
+
         const index = state.productReviews.findIndex(
           (review) => review.id === action.payload.id,
         );
+
         if (index !== -1) {
-          state.productReviews[index] = action.payload;
+          state.productReviews[index] = {
+            ...state.productReviews[index],
+            ...action.payload,
+          };
         }
       })
 

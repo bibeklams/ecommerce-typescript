@@ -31,6 +31,7 @@ export const getCartThunk = createAsyncThunk<Cart>("cart/getCart", async () => {
   const response = await getCart();
   return response;
 });
+
 export const clearCartThunk = createAsyncThunk<Cart>(
   "cart/clearCart",
   async () => {

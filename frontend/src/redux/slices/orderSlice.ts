@@ -48,6 +48,10 @@ export const createOrderThunk = createAsyncThunk<
     shippingName: string;
     shippingPhone: string;
     shippingAddress: string;
+    items: {
+      productId: number;
+      quantity: number;
+    }[];
   }
 >("orders/createOrder", async (data) => {
   const response = await createOrder(data);

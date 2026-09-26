@@ -39,14 +39,12 @@ export const getAllPayment = async (
   return response.data.data;
 };
 
-export const initiateEsewaPayment = async (data: {
-  shippingName: string;
-  shippingPhone: string;
-  shippingAddress: string;
-}): Promise<EsewaPaymentData> => {
-  const response = await api.post("/payments/esewa", data);
+export const initiateEsewaPayment = async (
+  orderId: number,
+): Promise<EsewaPaymentData> => {
+  const response = await api.post(`/payments/esewa/${orderId}`);
 
-  return response.data.data;
+  return response.data;
 };
 
 export const updatePaymentStatus = async (
