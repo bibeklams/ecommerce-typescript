@@ -12,6 +12,7 @@ import dashboardRoutes from "./dashboard.routes.js";
 import userRoutes from "./user.routes.js";
 import sellerRoutes from "./seller.routes.js";
 import reviewRoutes from "./review.routes.js";
+import recommendationRoutes from "./revommendation.routes.js";
 const router = express.Router();
 
 router.use("/auth", authRoutes);
@@ -27,5 +28,6 @@ router.use("/dashboard", dashboardRoutes);
 router.use("/users", userRoutes);
 router.use("/sellers", sellerRoutes);
 router.use("/reviews", reviewRoutes);
+router.use("/products", recommendationRoutes);
 
 export default router;
