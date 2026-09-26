@@ -1,32 +1,55 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
+
 import { getSingleProductThunk } from "../redux/slices/productSlice";
+import { getRecommendedProductsThunk } from "../redux/slices/recommendationSlice";
+
 import ReviewSection from "../components/reviews/ReviewSection";
+import RecommendedProducts from "../components/product/RecommendedProducts";
+
 import {
   addToWishlist,
   removeWishlistThunk,
   getWishlistThunk,
 } from "../redux/slices/wishlistSlice";
+
 import { addToCartThunk } from "../redux/slices/cartSlice";
+
 import { FaHeart } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const ProductDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
+
   const { product, loading, error } = useAppSelector((state) => state.product);
+
   const { items: wishlistItems } = useAppSelector((state) => state.wishlist);
+
+  const recommendations = useAppSelector(
+    (state) => state.recommendation.recommendations,
+  );
+
+  const recommendationLoading = useAppSelector(
+    (state) => state.recommendation.loading,
+  );
 
   const isWishlisted = product
     ? wishlistItems.some((item) => item.productId === product.id)
     : false;
+
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (!id) return;
 
-    dispatch(getSingleProductThunk(Number(id)));
+    const productId = Number(id);
+
+    if (Number.isNaN(productId)) return;
+
+    dispatch(getSingleProductThunk(productId));
+    dispatch(getRecommendedProductsThunk(productId));
   }, [id, dispatch]);
 
   useEffect(() => {
@@ -56,6 +79,7 @@ const ProductDetailsPage = () => {
       </main>
     );
   }
+
   const stock = product.inventory?.quantity ?? 0;
 
   const decreaseQuantity = () => {
@@ -65,6 +89,7 @@ const ProductDetailsPage = () => {
   const increaseQuantity = () => {
     setQuantity((current) => Math.min(stock, current + 1));
   };
+
   const handleAddToCart = async () => {
     try {
       await dispatch(
@@ -95,6 +120,7 @@ const ProductDetailsPage = () => {
       toast.error("Something went wrong");
     }
   };
+
   return (
     <main className="min-h-screen bg-white px-4 py-8 md:px-8">
       <div className="mx-auto max-w-6xl">
@@ -239,6 +265,8 @@ const ProductDetailsPage = () => {
               >
                 {stock > 0 ? "Add to Cart" : "Out of Stock"}
               </button>
+
+              {/* WISHLIST */}
               <button
                 type="button"
                 onClick={handleWishlistToggle}
@@ -310,12 +338,14 @@ const ProductDetailsPage = () => {
             </div>
           </section>
         )}
-        <ReviewSection productId={product.id} />
-        {/* 
-          RELATED PRODUCTS WILL GO HERE LATER
 
-          <RelatedProducts />
-        */}
+        {/* ================= REVIEWS ================= */}
+        <ReviewSection productId={product.id} />
+
+        {/* ================= RECOMMENDATIONS ================= */}
+        {!recommendationLoading && (
+          <RecommendedProducts products={recommendations} />
+        )}
       </div>
     </main>
   );

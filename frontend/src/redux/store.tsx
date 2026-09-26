@@ -13,6 +13,7 @@ import userReducer from "./slices/userSlice";
 import sellerReducer from "./slices/sellerSlice";
 import sellerDashboardReducer from "./slices/sellerDashboardSlice";
 import reviewReducer from "./slices/reviewSlice";
+import recommendationReducer from "./slices/recommendationSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -28,6 +29,7 @@ export const store = configureStore({
     user: userReducer,
     seller: sellerReducer,
     review: reviewReducer,
+    recommendation: recommendationReducer,
   },
 });
 
