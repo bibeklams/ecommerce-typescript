@@ -40,12 +40,18 @@ export const createProduct = async (data: {
   return response.data.data;
 };
 
-export const getAllProducts = async (search = "", page = 1, limit = 20) => {
+export const getAllProducts = async (
+  search = "",
+  page = 1,
+  limit = 20,
+  categoryId?: number,
+) => {
   const response = await api.get("/products", {
     params: {
       search,
       page,
       limit,
+      categoryId,
     },
   });
 

@@ -113,10 +113,11 @@ export const getAllProducts = async (
   search: string = "",
   page: number = 1,
   limit: number = 20,
+  categoryId?: number,
 ) => {
   const skip = (page - 1) * limit;
 
-  const cacheKey = `products:search:${search}:page:${page}:limit:${limit}`;
+  const cacheKey = `products:search:${search}:category:${categoryId ?? "all"}:page:${page}:limit:${limit}`;
 
   // 1. Check Redis cache
   const cache = await redis.get(cacheKey);
@@ -125,18 +126,25 @@ export const getAllProducts = async (
     return JSON.parse(cache);
   }
 
-  // 2. Get products
-  const products = await prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      name: {
-        contains: search,
-        mode: "insensitive",
-      },
+  // 2. Build product filter
+  const where = {
+    deletedAt: null,
+    name: {
+      contains: search,
+      mode: "insensitive" as const,
     },
+    ...(categoryId !== undefined && {
+      categoryId,
+    }),
+  };
+
+  // 3. Get products
+  const products = await prisma.product.findMany({
+    where,
 
     include: {
       category: true,
+
       inventory: true,
 
       gallery: {
@@ -166,18 +174,12 @@ export const getAllProducts = async (
     take: limit,
   });
 
-  // 3. Count total products
+  // 4. Count total products
   const total = await prisma.product.count({
-    where: {
-      deletedAt: null,
-      name: {
-        contains: search,
-        mode: "insensitive",
-      },
-    },
+    where,
   });
 
-  // 4. Create response
+  // 5. Create response
   const result = {
     products,
     total,
@@ -186,7 +188,7 @@ export const getAllProducts = async (
     totalPages: Math.ceil(total / limit),
   };
 
-  // 5. Store in Redis
+  // 6. Store in Redis
   await redis.set(cacheKey, JSON.stringify(result), "EX", 600);
 
   return result;

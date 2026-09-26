@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 
 import { getAllProductsThunk } from "../redux/slices/productSlice";
@@ -10,6 +10,7 @@ import CategoryList from "../components/user/home/CategoryList";
 import ProductList from "../components/user/home/ProductList";
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const {
@@ -55,11 +56,9 @@ const HomePage = () => {
   };
 
   // Filter products by category
-  const handleCategoryClick = (categoryId: number) => {
-    console.log("Selected category:", categoryId);
 
-    // Category filtering can be connected here
-    // once the product API accepts categoryId.
+  const handleCategoryClick = (categoryId: number) => {
+    navigate(`/category/${categoryId}`);
   };
 
   return (

@@ -4,14 +4,14 @@ export const getRecommendedProducts = async (
   productId: number,
   limit: number = 8,
 ) => {
+  // =====================================================
   // 1. GET CURRENT PRODUCT
+  // =====================================================
+
   const currentProduct = await prisma.product.findFirst({
     where: {
       id: productId,
       deletedAt: null,
-      publishedAt: {
-        not: null,
-      },
     },
     select: {
       id: true,
@@ -20,14 +20,18 @@ export const getRecommendedProducts = async (
     },
   });
 
+  console.log("Current product:", currentProduct);
+
   if (!currentProduct) {
     throw new Error("Product not found");
   }
 
-  //2. GET CANDIDATE PRODUCTS
+  // =====================================================
+  // 2. GET CANDIDATE PRODUCTS
+  // =====================================================
 
-  /* * Only recommend:
-   *
+  /*
+   * Only recommend:
    * - published products
    * - non-deleted products
    * - products other than current product
@@ -39,9 +43,6 @@ export const getRecommendedProducts = async (
         not: productId,
       },
       deletedAt: null,
-      publishedAt: {
-        not: null,
-      },
     },
     include: {
       category: true,
@@ -53,17 +54,24 @@ export const getRecommendedProducts = async (
     },
   });
 
-  /*
-   * =====================================================
-   * 3. CALCULATE RECOMMENDATION SCORE
-   * =====================================================
-   */
+  console.log(
+    "Candidate products:",
+    products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      categoryId: product.categoryId,
+      publishedAt: product.publishedAt,
+    })),
+  );
+
+  // =====================================================
+  // 3. CALCULATE RECOMMENDATION SCORE
+  // =====================================================
 
   const recommendedProducts = products.map((product) => {
     let score = 0;
 
-    //* CATEGORY MATCH
-
+    // CATEGORY MATCH
     if (product.categoryId === currentProduct.categoryId) {
       score += 50;
     }
@@ -92,9 +100,48 @@ export const getRecommendedProducts = async (
     };
   });
 
-  recommendedProducts.sort(
+  // =====================================================
+  // 4. CHECK SCORES
+  // =====================================================
+
+  console.log(
+    "Products with scores:",
+    recommendedProducts.map((product) => ({
+      id: product.id,
+      name: product.name,
+      categoryId: product.categoryId,
+      recommendationScore: product.recommendationScore,
+    })),
+  );
+
+  // =====================================================
+  // 5. REMOVE PRODUCTS WITH SCORE 0
+  // =====================================================
+
+  const filteredProducts = recommendedProducts.filter(
+    (product) => product.recommendationScore > 0,
+  );
+
+  console.log(
+    "Filtered recommendations:",
+    filteredProducts.map((product) => ({
+      id: product.id,
+      name: product.name,
+      recommendationScore: product.recommendationScore,
+    })),
+  );
+
+  // =====================================================
+  // 6. SORT BY SCORE
+  // =====================================================
+
+  filteredProducts.sort(
     (a, b) => b.recommendationScore - a.recommendationScore,
   );
 
-  return recommendedProducts.slice(0, limit);
+  // =====================================================
+  // 7. RETURN TOP PRODUCTS
+  // =====================================================
+
+  return filteredProducts.slice(0, limit);
 };

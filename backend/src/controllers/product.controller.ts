@@ -55,7 +55,16 @@ export const getAllProducts = async (
     const limit = Number(req.query.limit ?? 20);
     const search = String(req.query.search ?? "");
 
-    const result = await productService.getAllProducts(search, page, limit);
+    const categoryId = req.query.categoryId
+      ? Number(req.query.categoryId)
+      : undefined;
+
+    const result = await productService.getAllProducts(
+      search,
+      page,
+      limit,
+      categoryId,
+    );
 
     return res.status(200).json({
       success: true,

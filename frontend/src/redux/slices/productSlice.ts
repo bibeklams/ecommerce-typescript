@@ -16,6 +16,7 @@ export type GetProductsParams = {
   search?: string;
   page?: number;
   limit?: number;
+  categoryId?: number;
 };
 
 export type GetProductsResponse = {
@@ -90,12 +91,13 @@ export const getAllProductsThunk = createAsyncThunk<
   GetProductsParams | undefined
 >(
   "product/getAllProducts",
-  async ({ search = "", page = 1, limit = 20 } = {}) => {
-    const response = await getAllProducts(search, page, limit);
+  async ({ search = "", page = 1, limit = 20, categoryId } = {}) => {
+    const response = await getAllProducts(search, page, limit, categoryId);
 
     return response;
   },
 );
+
 export const getSellerAllProductsThunk = createAsyncThunk<
   GetProductsResponse,
   GetProductsParams | undefined

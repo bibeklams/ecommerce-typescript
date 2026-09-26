@@ -8,6 +8,7 @@ import ProtectedRoute from "./ProtectedRoute";
 
 import HomePage from "../pages/HomePage";
 import ProductDetailsPage from "../pages/ProductDetailsPage";
+import CategoryProductsPage from "../pages/CategoryProductsPage";
 
 import VerifyEmailPage from "../components/auth/VerifyEmailPage";
 import LoginPage from "../components/auth/LoginPage";
@@ -54,7 +55,10 @@ const AppRoutes = () => {
         <Route path="/home" element={<HomePage />} />
 
         <Route path="/products/:id" element={<ProductDetailsPage />} />
-
+        <Route
+          path="/category/:categoryId"
+          element={<CategoryProductsPage />}
+        />
         <Route path="/wishlist" element={<WishListPage />} />
 
         <Route path="/cart" element={<CartPage />} />
