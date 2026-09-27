@@ -3,135 +3,235 @@ import createError from "http-errors";
 import { OrderStatus, PaymentStatus } from "../generated/prisma/client.js";
 import redis from "../config/redis.js";
 
-export const createOrder = async (data: {
+interface CreateOrderItem {
+  productId: number;
+  quantity: number;
+}
+interface CreateOrderData {
   userId: number;
+
   shippingName: string;
   shippingPhone: string;
   shippingAddress: string;
-}) => {
-  // 1. Find user's cart
-  const cart = await prisma.cart.findUnique({
+
+  // Required only for Buy Now.
+  // For cart checkout, leave this undefined.
+  items?: CreateOrderItem[];
+}
+
+export const createOrder = async (data: CreateOrderData) => {
+  let orderItems: CreateOrderItem[];
+  let cartId: number | null = null;
+
+  if (data.items && data.items.length > 0) {
+    orderItems = data.items;
+  } else {
+    const cart = await prisma.cart.findUnique({
+      where: {
+        userId: data.userId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!cart) {
+      throw createError(400, "No cart found");
+    }
+
+    if (cart.items.length === 0) {
+      throw createError(400, "Cart is empty");
+    }
+
+    orderItems = cart.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+
+    cartId = cart.id;
+  }
+
+  const productIds = orderItems.map((item) => item.productId);
+
+  const uniqueProductIds = new Set(productIds);
+
+  if (uniqueProductIds.size !== productIds.length) {
+    throw createError(400, "Duplicate products are not allowed");
+  }
+  const products = await prisma.product.findMany({
     where: {
-      userId: data.userId,
+      id: {
+        in: productIds,
+      },
+      deletedAt: null,
     },
     include: {
-      items: {
-        include: {
-          product: {
-            include: {
-              inventory: true,
-            },
-          },
-        },
-      },
+      inventory: true,
     },
   });
 
-  if (!cart) {
-    throw createError(400, "No cart found");
+  if (products.length !== productIds.length) {
+    throw createError(400, "One or more products are no longer available");
   }
 
-  if (cart.items.length === 0) {
-    throw createError(400, "Cart is empty");
-  }
-
-  // 2. Validate products and stock
-  for (const item of cart.items) {
-    if (item.product.deletedAt !== null) {
-      throw createError(
-        400,
-        `Product ${item.productId} is no longer available`,
-      );
-    }
-
+  for (const item of orderItems) {
     if (item.quantity <= 0) {
       throw createError(400, `Invalid quantity for product ${item.productId}`);
     }
 
-    if (!item.product.inventory) {
+    const product = products.find((product) => product.id === item.productId);
+
+    if (!product) {
+      throw createError(400, `Product ${item.productId} not found`);
+    }
+
+    if (!product.inventory) {
       throw createError(
         400,
         `Inventory not found for product ${item.productId}`,
       );
     }
 
-    if (item.quantity > item.product.inventory.quantity) {
+    if (item.quantity > product.inventory.quantity) {
       throw createError(400, `Not enough stock for product ${item.productId}`);
     }
   }
 
-  // 3. Calculate total
-  const total = cart.items.reduce((sum, item) => {
-    return sum + Number(item.product.price) * item.quantity;
+  const total = orderItems.reduce((sum, item) => {
+    const product = products.find((product) => product.id === item.productId);
+
+    if (!product) {
+      return sum;
+    }
+
+    return sum + Number(product.price) * item.quantity;
   }, 0);
 
-  // 4. Create order + order items + reduce inventory + clear cart
+  /*
+   * =====================================================
+   * 6. CREATE ORDER
+   * =====================================================
+   */
+
   const order = await prisma.$transaction(async (tx) => {
-    // Create order
     const newOrder = await tx.order.create({
       data: {
         userId: data.userId,
+
         shippingName: data.shippingName,
         shippingPhone: data.shippingPhone,
         shippingAddress: data.shippingAddress,
+
         total,
 
-        // Create order items
         orderItems: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: Number(item.product.price),
-            total: Number(item.product.price) * item.quantity,
-          })),
+          create: orderItems.map((item) => {
+            const product = products.find(
+              (product) => product.id === item.productId,
+            );
+
+            if (!product) {
+              throw createError(400, `Product ${item.productId} not found`);
+            }
+
+            const price = Number(product.price);
+
+            return {
+              productId: item.productId,
+              quantity: item.quantity,
+              price,
+              total: price * item.quantity,
+            };
+          }),
         },
       },
 
       include: {
+        user: true,
+
         orderItems: {
           include: {
             product: true,
           },
         },
+
+        payments: true,
       },
     });
 
-    // Reduce inventory
-    for (const item of cart.items) {
-      console.log("CART ITEM:", {
-        productId: item.productId,
-        quantity: item.quantity,
-        stockBefore: item.product.inventory?.quantity,
-      });
+    /*
+     * =================================================
+     * REDUCE INVENTORY
+     * =================================================
+     */
 
-      const updatedInventory = await tx.inventory.update({
+    for (const item of orderItems) {
+      const result = await tx.inventory.updateMany({
         where: {
           productId: item.productId,
+
+          // Important for concurrency.
+          quantity: {
+            gte: item.quantity,
+          },
         },
+
         data: {
           quantity: {
             decrement: item.quantity,
           },
         },
       });
+
+      if (result.count === 0) {
+        throw createError(
+          400,
+          `Not enough stock for product ${item.productId}`,
+        );
+      }
     }
 
-    // Clear cart
-    await tx.cartItem.deleteMany({
-      where: {
-        cartId: cart.id,
-      },
-    });
+    /*
+     * =================================================
+     * CLEAR CART ONLY FOR CART CHECKOUT
+     * =================================================
+     *
+     * Buy Now:
+     *     cartId === null
+     *     → do NOT touch cart
+     *
+     * Cart checkout:
+     *     cartId exists
+     *     → clear cart
+     */
+
+    if (cartId !== null) {
+      await tx.cartItem.deleteMany({
+        where: {
+          cartId,
+        },
+      });
+    }
 
     return newOrder;
   });
 
-  // 5. Invalidate product cache
-  for (const item of cart.items) {
+  /*
+   * =====================================================
+   * 7. INVALIDATE PRODUCT CACHE
+   * =====================================================
+   */
+
+  for (const item of orderItems) {
     await redis.del(`product:${item.productId}`);
   }
 
-  // 6. Invalidate order cache
+  /*
+   * =====================================================
+   * 8. INVALIDATE ORDER CACHE
+   * =====================================================
+   */
+
   await redis.del("order:count");
 
   const orderListKeys = await redis.keys("orders:*");
@@ -140,8 +240,18 @@ export const createOrder = async (data: {
     await redis.del(...orderListKeys);
   }
 
+  /*
+   * =====================================================
+   * 9. INVALIDATE SELLER ORDER CACHE
+   * =====================================================
+   */
+
   const sellerIds = [
-    ...new Set(cart.items.map((item) => item.product.sellerId)),
+    ...new Set(
+      products
+        .map((product) => product.sellerId)
+        .filter((sellerId): sellerId is number => sellerId !== null),
+    ),
   ];
 
   for (const sellerId of sellerIds) {
@@ -151,6 +261,7 @@ export const createOrder = async (data: {
       await redis.del(...sellerOrderKeys);
     }
   }
+
   return order;
 };
 

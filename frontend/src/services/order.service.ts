@@ -2,19 +2,22 @@ import api from "./api";
 
 import type { Order, OrderStatus, OrderListResponse } from "../types/order";
 import type { PaymentStatus } from "../types/payment";
-
-export const createOrder = async (data: {
+interface CreateOrderData {
   shippingName: string;
   shippingPhone: string;
   shippingAddress: string;
-  items: {
+
+  // Only required for Buy Now.
+  items?: {
     productId: number;
     quantity: number;
   }[];
-}) => {
+}
+
+export const createOrder = async (data: CreateOrderData) => {
   const response = await api.post("/orders", data);
 
-  return response.data;
+  return response.data.data;
 };
 
 export const getAllOrders = async (

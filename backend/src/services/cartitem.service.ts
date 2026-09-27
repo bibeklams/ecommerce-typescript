@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import createError from "http-errors";
 import redis from "../config/redis.js";
+import { log } from "node:console";
 
 export const addToCart = async (data: {
   productId: number;

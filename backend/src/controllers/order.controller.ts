@@ -9,19 +9,19 @@ export const createOrder = async (
   next: NextFunction,
 ) => {
   try {
-    const { shippingName, shippingPhone, shippingAddress } = req.body;
+    const { shippingName, shippingPhone, shippingAddress, items } = req.body;
 
-    // userId should come from authenticated user
     const userId = req.user!.id;
-    console.log("Authenticated userId:", req.user!.id);
+
     const order = await orderService.createOrder({
       userId,
       shippingName,
       shippingPhone,
       shippingAddress,
+      items,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Order created successfully",
       data: order,

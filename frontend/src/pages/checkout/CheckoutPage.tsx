@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import CheckoutForm from "../../components/checkout/CheckoutForm";
+
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+
 import { getCartThunk } from "../../redux/slices/cartSlice";
 import { createOrderThunk } from "../../redux/slices/orderSlice";
 import { createPaymentThunk } from "../../redux/slices/paymentSlice";
+
 import { initiateEsewaPayment } from "../../services/payment.service";
 import { getSingleProduct } from "../../services/product.service";
+
 import type { CheckoutValues } from "../../types/checkout";
 import type { EsewaPaymentData } from "../../types/payment";
 import type { Product } from "../../types/product";
@@ -77,13 +82,19 @@ const CheckoutPage = () => {
 
   /*
    * =====================================================
+   * RESET BUY NOW QUANTITY WHEN URL CHANGES
+   * =====================================================
+   */
+
+  /*
+   * =====================================================
    * LOAD CHECKOUT DATA
    *
    * Buy Now:
-   *   Load only selected product.
+   *     Load selected product only.
    *
    * Cart:
-   *   Load user's cart.
+   *     Load user's cart.
    * =====================================================
    */
 
@@ -97,6 +108,7 @@ const CheckoutPage = () => {
         try {
           setBuyNowLoading(true);
           setBuyNowError(null);
+          setBuyNowProduct(null);
 
           const product = await getSingleProduct(productId);
 
@@ -115,19 +127,25 @@ const CheckoutPage = () => {
       return;
     }
 
+    /*
+     * Normal cart checkout.
+     *
+     * The backend will later read productId
+     * and quantity directly from the user's cart.
+     */
+
     dispatch(getCartThunk());
   }, [dispatch, isBuyNow, invalidBuyNow, productId]);
 
   /*
    * =====================================================
    * CHECKOUT ITEMS
-   * =====================================================
    *
    * Buy Now:
-   *   Uses local checkoutQuantity.
+   *     selected product + local quantity
    *
    * Cart:
-   *   Uses cart items directly.
+   *     existing cart items
    * =====================================================
    */
 
@@ -158,9 +176,8 @@ const CheckoutPage = () => {
 
     Object.entries(paymentData).forEach(([key, value]) => {
       /*
-       * orderId is used internally by our backend.
-       *
-       * eSewa only receives the payment fields it expects.
+       * orderId is for our backend only.
+       * Do not send it to eSewa.
        */
 
       if (key === "orderId") {
@@ -197,8 +214,13 @@ const CheckoutPage = () => {
     try {
       /*
        * =================================================
-       * CONVERT CHECKOUT ITEMS TO ORDER ITEMS
+       * BUY NOW ITEMS
        * =================================================
+       *
+       * Only Buy Now needs to send items.
+       *
+       * Cart checkout does NOT need to send items
+       * because the backend already has the cart.
        */
 
       const orderItems = checkoutItems.map((item) => ({
@@ -210,10 +232,6 @@ const CheckoutPage = () => {
        * =================================================
        * CREATE ORDER
        * =================================================
-       *
-       * Backend calculates the actual product price.
-       *
-       * Never trust price from the frontend.
        */
 
       const order = await dispatch(
@@ -221,7 +239,19 @@ const CheckoutPage = () => {
           shippingName: values.shippingName,
           shippingPhone: values.shippingPhone,
           shippingAddress: values.shippingAddress,
-          items: orderItems,
+
+          /*
+           * Buy Now:
+           *     send productId + quantity
+           *
+           * Cart:
+           *     send nothing
+           *     backend reads the cart
+           */
+
+          ...(isBuyNow && {
+            items: orderItems,
+          }),
         }),
       ).unwrap();
 
@@ -232,14 +262,12 @@ const CheckoutPage = () => {
        */
 
       if (values.paymentMethod === "CASH_ON_DELIVERY") {
-        const payment = await dispatch(
+        await dispatch(
           createPaymentThunk({
             orderId: order.id,
             method: "CASH_ON_DELIVERY",
           }),
         ).unwrap();
-
-        console.log("COD payment created:", payment);
 
         navigate(`/order-success/${order.id}`);
 
@@ -250,21 +278,10 @@ const CheckoutPage = () => {
        * =================================================
        * ESEWA
        * =================================================
-       *
-       * Order already exists.
-       *
-       * Backend:
-       *   1. Creates pending eSewa payment
-       *   2. Generates signed eSewa payment data
-       *
-       * Frontend:
-       *   3. Submits that data to eSewa
        */
 
       if (values.paymentMethod === "ESEWA") {
         const paymentData = await initiateEsewaPayment(order.id);
-
-        console.log("eSewa payment initiated:", paymentData);
 
         submitToEsewa(paymentData);
 
@@ -387,9 +404,7 @@ const CheckoutPage = () => {
                       Price: Rs. {item.product.price}
                     </p>
 
-                    {/* =================================================
-                        QUANTITY
-                    ================================================= */}
+                    {/* QUANTITY */}
 
                     <div className="mt-3 flex items-center gap-3">
                       <span className="text-sm text-gray-600">Quantity:</span>
@@ -430,13 +445,6 @@ const CheckoutPage = () => {
                           </button>
                         </div>
                       ) : (
-                        /*
-                         * Cart checkout:
-                         *
-                         * Cart quantity is controlled by the cart.
-                         * We don't modify it directly here.
-                         */
-
                         <span className="text-sm font-medium text-gray-700">
                           {item.quantity}
                         </span>

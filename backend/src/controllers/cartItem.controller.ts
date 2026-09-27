@@ -10,22 +10,25 @@ export const addToCart = async (
 ) => {
   try {
     const productId = Number(req.params.productId);
+
     const quantity = Number(req.body.quantity);
 
-    if (Number.isNaN(productId)) {
+    if (!Number.isInteger(productId) || productId <= 0) {
       throw createError(400, "Invalid product ID");
     }
 
-    if (Number.isNaN(quantity) || quantity <= 0) {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
       throw createError(400, "Invalid quantity");
     }
 
     const userId = req.user?.id;
 
     let guestId = req.cookies.guestId;
-    console.log("userId:", req.user?.id);
-    console.log("guestId:", req.cookies.guestId);
-    // Guest user
+
+    /*
+     * Guest cart
+     */
+
     if (!userId && !guestId) {
       guestId = crypto.randomUUID();
 
@@ -33,6 +36,9 @@ export const addToCart = async (
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+
+        // Optional but recommended.
+        maxAge: 1000 * 60 * 60 * 24 * 30,
       });
     }
 
